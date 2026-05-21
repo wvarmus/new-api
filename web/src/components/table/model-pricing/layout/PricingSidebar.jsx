@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Button } from '@douyinfe/semi-ui';
+import { RotateCcw, SlidersHorizontal } from 'lucide-react';
 import PricingGroups from '../filter/PricingGroups';
 import PricingQuotaTypes from '../filter/PricingQuotaTypes';
 import PricingEndpointTypes from '../filter/PricingEndpointTypes';
@@ -91,14 +92,18 @@ const PricingSidebar = ({
     });
 
   return (
-    <div className='p-2'>
-      <div className='flex items-center justify-between mb-6'>
-        <div className='text-lg font-semibold text-gray-800'>{t('筛选')}</div>
+    <div className='pricing-filter-panel'>
+      <div className='pricing-filter-panel-header'>
+        <div className='pricing-filter-panel-title'>
+          <SlidersHorizontal size={17} />
+          <span>{t('筛选')}</span>
+        </div>
         <Button
           theme='outline'
           type='tertiary'
+          icon={<RotateCcw size={14} />}
           onClick={handleResetFilters}
-          className='text-gray-500 hover:text-gray-700'
+          className='pricing-filter-reset'
         >
           {t('重置')}
         </Button>

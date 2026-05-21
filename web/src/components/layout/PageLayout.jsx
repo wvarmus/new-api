@@ -42,6 +42,15 @@ import { useLocation } from 'react-router-dom';
 import { normalizeLanguage } from '../../i18n/language';
 const { Sider, Content, Header } = Layout;
 
+const STATUS_FALLBACK_FOR_PRICING_PAGE = {
+  setup: true,
+  price: 1,
+  usd_exchange_rate: 1,
+  custom_currency_exchange_rate: 1,
+  custom_currency_symbol: '$',
+  quota_display_type: 'USD',
+};
+
 const PageLayout = () => {
   const [userState, userDispatch] = useContext(UserContext);
   const [, statusDispatch] = useContext(StatusContext);
@@ -90,17 +99,31 @@ const PageLayout = () => {
   };
 
   const loadStatus = async () => {
+    const quietStatusFailure = location.pathname === '/pricing';
+    const applyPricingStatusFallback = () => {
+      statusDispatch({
+        type: 'set',
+        payload: STATUS_FALLBACK_FOR_PRICING_PAGE,
+      });
+    };
+
     try {
-      const res = await API.get('/api/status');
+      const res = await API.get('/api/status', { skipErrorHandler: true });
       const { success, data } = res.data;
       if (success) {
         statusDispatch({ type: 'set', payload: data });
         setStatusData(data);
+      } else if (quietStatusFailure) {
+        applyPricingStatusFallback();
       } else {
         showError('Unable to connect to server');
       }
     } catch (error) {
-      showError('Failed to load status');
+      if (quietStatusFailure) {
+        applyPricingStatusFallback();
+      } else {
+        showError('Failed to load status');
+      }
     }
   };
 

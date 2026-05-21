@@ -73,22 +73,6 @@ const FilterModalContent = ({ sidebarProps, t }) => {
 
   return (
     <>
-      <PricingDisplaySettings
-        showWithRecharge={showWithRecharge}
-        setShowWithRecharge={setShowWithRecharge}
-        currency={currency}
-        setCurrency={setCurrency}
-        siteDisplayType={siteDisplayType}
-        showRatio={showRatio}
-        setShowRatio={setShowRatio}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        tokenUnit={tokenUnit}
-        setTokenUnit={setTokenUnit}
-        loading={loading}
-        t={t}
-      />
-
       <PricingVendors
         filterVendor={filterVendor}
         setFilterVendor={setFilterVendor}
@@ -130,6 +114,22 @@ const FilterModalContent = ({ sidebarProps, t }) => {
         setFilterEndpointType={setFilterEndpointType}
         models={endpointTypeModels}
         allModels={categoryProps.models}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingDisplaySettings
+        showWithRecharge={showWithRecharge}
+        setShowWithRecharge={setShowWithRecharge}
+        currency={currency}
+        setCurrency={setCurrency}
+        siteDisplayType={siteDisplayType}
+        showRatio={showRatio}
+        setShowRatio={setShowRatio}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        tokenUnit={tokenUnit}
+        setTokenUnit={setTokenUnit}
         loading={loading}
         t={t}
       />

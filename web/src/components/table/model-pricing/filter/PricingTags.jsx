@@ -18,7 +18,27 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
+import PricingFilterChips from './PricingFilterChips';
+
+const TAG_ORDER = [
+  '工具调用',
+  '开源权重',
+  '上下文128k',
+  '上下文1m',
+  '上下文200k',
+  '上下文256k',
+  '上下文32k',
+  '上下文400k',
+  '图像理解',
+  '推理增强',
+  '文件理解',
+  '音频理解',
+];
+
+const getTagOrderIndex = (tag) => {
+  const index = TAG_ORDER.indexOf(tag);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+};
 
 /**
  * 模型标签筛选组件
@@ -51,7 +71,11 @@ const PricingTags = ({
       }
     });
 
-    return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+    return Array.from(tagSet).sort((a, b) => {
+      const orderDiff = getTagOrderIndex(a) - getTagOrderIndex(b);
+      if (orderDiff !== 0) return orderDiff;
+      return a.localeCompare(b);
+    });
   }, [allModels, models]);
 
   // 计算标签对应的模型数量
@@ -94,14 +118,14 @@ const PricingTags = ({
   }, [getAllTags, getTagCount, t, models.length]);
 
   return (
-    <SelectableButtonGroup
+    <PricingFilterChips
       title={t('标签')}
       items={items}
       activeValue={filterTag}
       onChange={setFilterTag}
       loading={loading}
-      variant='rose'
-      t={t}
+      className='pricing-filter-chip-section-rose'
+      skeletonCount={8}
     />
   );
 };

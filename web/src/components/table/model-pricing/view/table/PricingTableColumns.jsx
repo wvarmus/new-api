@@ -105,7 +105,6 @@ export const getPricingTableColumns = ({
   t,
   selectedGroup,
   groupRatio,
-  copyText,
   setModalImageUrl,
   setIsModalOpenurl,
   currency,
@@ -146,11 +145,7 @@ export const getPricingTableColumns = ({
     title: t('模型名称'),
     dataIndex: 'model_name',
     render: (text, record, index) => {
-      return renderModelTag(text, {
-        onClick: () => {
-          copyText(text);
-        },
-      });
+      return renderModelTag(text);
     },
     onFilter: (value, record) =>
       record.model_name.toLowerCase().includes(value.toLowerCase()),
@@ -238,12 +233,16 @@ export const getPricingTableColumns = ({
 
       return (
         <div className='space-y-1'>
-          {priceItems.map((item) => (
-            <div key={item.key} className='text-gray-700'>
-              {item.label} {item.value}
-              {item.suffix}
-            </div>
-          ))}
+          {priceItems.length > 0 ? (
+            priceItems.map((item) => (
+              <div key={item.key} className='text-gray-700'>
+                {item.label} {item.value}
+                {item.suffix}
+              </div>
+            ))
+          ) : (
+            <div className='text-gray-700'>-</div>
+          )}
         </div>
       );
     },

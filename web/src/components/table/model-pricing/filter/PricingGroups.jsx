@@ -18,65 +18,45 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
+import PricingFilterChips from './PricingFilterChips';
 
-/**
- * 分组筛选组件
- * @param {string} filterGroup 当前选中的分组，'all' 表示不过滤
- * @param {Function} setFilterGroup 设置选中分组
- * @param {Record<string, any>} usableGroup 后端返回的可用分组对象
- * @param {Record<string, number>} groupRatio 分组倍率对象
- * @param {Array} models 模型列表
- * @param {boolean} loading 是否加载中
- * @param {Function} t i18n
- */
+const formatRatio = (ratio) => {
+  const normalizedRatio = ratio ?? 1;
+  const numericRatio = Number(normalizedRatio);
+  if (Number.isFinite(numericRatio)) {
+    return `${Number.parseFloat(numericRatio.toFixed(4))}x`;
+  }
+  return `${normalizedRatio}x`;
+};
+
 const PricingGroups = ({
   filterGroup,
   setFilterGroup,
   usableGroup = {},
   groupRatio = {},
-  models = [],
   loading = false,
   t,
 }) => {
   const groups = [
     'all',
-    ...Object.keys(usableGroup).filter((key) => key !== ''),
+    ...Object.keys(usableGroup).filter((key) => key !== '' && key !== 'auto'),
   ];
 
-  const items = groups.map((g) => {
-    const modelCount =
-      g === 'all'
-        ? models.length
-        : models.filter((m) => m.enable_groups && m.enable_groups.includes(g))
-            .length;
-    let ratioDisplay = '';
-    if (g === 'all') {
-      // ratioDisplay = t('全部');
-    } else {
-      const ratio = groupRatio[g];
-      if (ratio !== undefined && ratio !== null) {
-        ratioDisplay = `${ratio}x`;
-      } else {
-        ratioDisplay = '1x';
-      }
-    }
-    return {
-      value: g,
-      label: g === 'all' ? t('全部分组') : g,
-      tagCount: ratioDisplay,
-    };
-  });
+  const items = groups.map((group) => ({
+    value: group,
+    label: group === 'all' ? t('全部分组') : group,
+    tagCount: group === 'all' ? undefined : formatRatio(groupRatio[group]),
+  }));
 
   return (
-    <SelectableButtonGroup
+    <PricingFilterChips
       title={t('可用令牌分组')}
       items={items}
       activeValue={filterGroup}
       onChange={setFilterGroup}
       loading={loading}
-      variant='teal'
-      t={t}
+      className='pricing-filter-chip-section-teal'
+      skeletonCount={12}
     />
   );
 };
