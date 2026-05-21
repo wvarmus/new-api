@@ -40,13 +40,11 @@ const PricingPage = () => {
   };
 
   return (
-    <div className='bg-white'>
+    <div className='pricing-page-shell'>
       <Layout className='pricing-layout'>
-        {!isMobile && (
-          <Sider className='pricing-scroll-hide pricing-sidebar'>
-            <PricingSidebar {...allProps} />
-          </Sider>
-        )}
+        <Sider className='pricing-scroll-hide pricing-sidebar'>
+          <PricingSidebar {...allProps} />
+        </Sider>
 
         <Content className='pricing-scroll-hide pricing-content'>
           <PricingContent
@@ -76,7 +74,6 @@ const PricingPage = () => {
         showRatio={allProps.showRatio}
         vendorsMap={pricingData.vendorsMap}
         endpointMap={pricingData.endpointMap}
-        autoGroups={pricingData.autoGroups}
         t={pricingData.t}
       />
     </div>

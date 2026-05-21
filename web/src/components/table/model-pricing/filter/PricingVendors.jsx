@@ -18,8 +18,22 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
 import { getLobeHubIcon } from '../../../../helpers';
+import PricingFilterChips from './PricingFilterChips';
+
+const VENDOR_ORDER = [
+  'ChatGPT',
+  'Claude',
+  'DeepSeek',
+  'Gemini',
+  '智谱 GLM',
+  '通义千问',
+];
+
+const getVendorOrderIndex = (vendor) => {
+  const index = VENDOR_ORDER.indexOf(vendor);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+};
 
 /**
  * 供应商筛选组件
@@ -56,7 +70,11 @@ const PricingVendors = ({
     });
 
     return {
-      vendors: Array.from(vendors).sort(),
+      vendors: Array.from(vendors).sort((a, b) => {
+        const orderDiff = getVendorOrderIndex(a) - getVendorOrderIndex(b);
+        if (orderDiff !== 0) return orderDiff;
+        return a.localeCompare(b);
+      }),
       vendorIcons,
       hasUnknownVendor,
     };
@@ -112,14 +130,12 @@ const PricingVendors = ({
   }, [getAllVendors, getVendorCount, t]);
 
   return (
-    <SelectableButtonGroup
+    <PricingFilterChips
       title={t('供应商')}
       items={items}
       activeValue={filterVendor}
       onChange={setFilterVendor}
       loading={loading}
-      variant='violet'
-      t={t}
     />
   );
 };

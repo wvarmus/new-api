@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
+import PricingFilterChips from './PricingFilterChips';
 
 /**
  * 计费类型筛选组件
@@ -40,20 +40,31 @@ const PricingQuotaTypes = ({
       .length;
 
   const items = [
-    { value: 'all', label: t('全部类型'), tagCount: qtyCount('all') },
-    { value: 0, label: t('按量计费'), tagCount: qtyCount(0) },
-    { value: 1, label: t('按次计费'), tagCount: qtyCount(1) },
+    {
+      value: 'all',
+      label: t('全部类型'),
+      tagCount: qtyCount('all'),
+    },
+    {
+      value: 0,
+      label: t('按量计费'),
+      tagCount: qtyCount(0),
+    },
+    {
+      value: 1,
+      label: t('按次计费'),
+      tagCount: qtyCount(1),
+    },
   ];
 
   return (
-    <SelectableButtonGroup
+    <PricingFilterChips
       title={t('计费类型')}
       items={items}
       activeValue={filterQuotaType}
       onChange={setFilterQuotaType}
       loading={loading}
-      variant='amber'
-      t={t}
+      className='pricing-filter-chip-section-orange'
     />
   );
 };

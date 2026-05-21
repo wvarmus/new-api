@@ -18,16 +18,18 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
+import PricingFilterChips from './PricingFilterChips';
 
-/**
- * 端点类型筛选组件
- * @param {string|'all'} filterEndpointType 当前值
- * @param {Function} setFilterEndpointType setter
- * @param {Array} models 模型列表
- * @param {boolean} loading 是否加载中
- * @param {Function} t i18n
- */
+const ENDPOINT_ORDER = ['anthropic', 'gemini', 'openai'];
+
+const normalizeEndpointLabel = (endpointType) => String(endpointType).trim();
+
+const getOrderIndex = (endpointType) => {
+  const normalized = normalizeEndpointLabel(endpointType).toLowerCase();
+  const index = ENDPOINT_ORDER.indexOf(normalized);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+};
+
 const PricingEndpointTypes = ({
   filterEndpointType,
   setFilterEndpointType,
@@ -36,66 +38,59 @@ const PricingEndpointTypes = ({
   loading = false,
   t,
 }) => {
-  // 获取系统中所有端点类型（基于 allModels，如果未提供则退化为 models）
-  const getAllEndpointTypes = () => {
+  const allEndpointTypes = React.useMemo(() => {
     const endpointTypes = new Set();
     (allModels.length > 0 ? allModels : models).forEach((model) => {
-      if (
-        model.supported_endpoint_types &&
-        Array.isArray(model.supported_endpoint_types)
-      ) {
+      if (Array.isArray(model.supported_endpoint_types)) {
         model.supported_endpoint_types.forEach((endpoint) => {
-          endpointTypes.add(endpoint);
+          if (endpoint) endpointTypes.add(endpoint);
         });
       }
     });
-    return Array.from(endpointTypes).sort();
-  };
+    return Array.from(endpointTypes).sort((a, b) => {
+      const orderDiff = getOrderIndex(a) - getOrderIndex(b);
+      if (orderDiff !== 0) return orderDiff;
+      return normalizeEndpointLabel(a).localeCompare(normalizeEndpointLabel(b));
+    });
+  }, [allModels, models]);
 
-  // 计算每个端点类型的模型数量
-  const getEndpointTypeCount = (endpointType) => {
-    if (endpointType === 'all') {
-      return models.length;
-    }
-    return models.filter(
-      (model) =>
-        model.supported_endpoint_types &&
-        model.supported_endpoint_types.includes(endpointType),
-    ).length;
-  };
-
-  // 端点类型显示名称映射
-  const getEndpointTypeLabel = (endpointType) => {
-    return endpointType;
-  };
-
-  const availableEndpointTypes = getAllEndpointTypes();
-
-  const items = [
-    {
-      value: 'all',
-      label: t('全部端点'),
-      tagCount: getEndpointTypeCount('all'),
+  const getEndpointTypeCount = React.useCallback(
+    (endpointType) => {
+      if (endpointType === 'all') return models.length;
+      return models.filter(
+        (model) =>
+          Array.isArray(model.supported_endpoint_types) &&
+          model.supported_endpoint_types.includes(endpointType),
+      ).length;
     },
-    ...availableEndpointTypes.map((endpointType) => {
-      const count = getEndpointTypeCount(endpointType);
-      return {
+    [models],
+  );
+
+  const items = React.useMemo(
+    () => [
+      {
+        value: 'all',
+        label: t('全部端点'),
+        tagCount: getEndpointTypeCount('all'),
+      },
+      ...allEndpointTypes.map((endpointType) => ({
         value: endpointType,
-        label: getEndpointTypeLabel(endpointType),
-        tagCount: count,
-      };
-    }),
-  ];
+        label: normalizeEndpointLabel(endpointType),
+        tagCount: getEndpointTypeCount(endpointType),
+      })),
+    ],
+    [allEndpointTypes, getEndpointTypeCount, t],
+  );
 
   return (
-    <SelectableButtonGroup
+    <PricingFilterChips
       title={t('端点类型')}
       items={items}
       activeValue={filterEndpointType}
       onChange={setFilterEndpointType}
       loading={loading}
-      variant='green'
-      t={t}
+      className='pricing-filter-chip-section-teal'
+      skeletonCount={4}
     />
   );
 };

@@ -18,15 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Typography, Toast, Avatar } from '@douyinfe/semi-ui';
+import { Typography, Avatar } from '@douyinfe/semi-ui';
 import { getLobeHubIcon } from '../../../../../helpers';
 
 const { Paragraph } = Typography;
 
 const CARD_STYLES = {
-  container:
-    'w-12 h-12 rounded-2xl flex items-center justify-center relative shadow-md',
-  icon: 'w-8 h-8 flex items-center justify-center',
+  container: 'model-detail-header-icon',
+  icon: 'model-detail-header-icon-inner',
 };
 
 const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
@@ -57,16 +56,7 @@ const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
     const avatarText = modelData?.model_name?.slice(0, 2).toUpperCase() || 'AI';
     return (
       <div className={CARD_STYLES.container}>
-        <Avatar
-          size='large'
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 16,
-            fontSize: 16,
-            fontWeight: 'bold',
-          }}
-        >
+        <Avatar className='model-detail-header-avatar' size='large'>
           {avatarText}
         </Avatar>
       </div>
@@ -74,19 +64,11 @@ const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
   };
 
   return (
-    <div className='flex items-center'>
+    <div className='model-detail-header'>
       {getModelIcon()}
-      <div className='ml-3 font-normal'>
-        <Paragraph
-          className='!mb-0 !text-lg !font-medium'
-          copyable={{
-            content: modelData?.model_name || '',
-            onCopy: () => Toast.success({ content: t('已复制模型名称') }),
-          }}
-        >
-          <span className='truncate max-w-60 font-bold'>
-            {modelData?.model_name || t('未知模型')}
-          </span>
+      <div className='model-detail-header-content'>
+        <Paragraph className='model-detail-header-title !mb-0'>
+          <span>{modelData?.model_name || t('未知模型')}</span>
         </Paragraph>
       </div>
     </div>

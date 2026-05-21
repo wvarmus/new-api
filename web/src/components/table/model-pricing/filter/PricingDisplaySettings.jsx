@@ -18,7 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
+import { BadgeDollarSign, Gauge, Table2, TextCursorInput } from 'lucide-react';
+import PricingFilterChips from './PricingFilterChips';
 
 const PricingDisplaySettings = ({
   showWithRecharge,
@@ -42,21 +43,25 @@ const PricingDisplaySettings = ({
       ? [
           {
             value: 'recharge',
-            label: t('充值价格显示'),
+            label: t('充值价格'),
+            icon: <BadgeDollarSign size={14} />,
           },
         ]
       : []),
     {
       value: 'ratio',
       label: t('显示倍率'),
+      icon: <Gauge size={14} />,
     },
     {
       value: 'tableView',
       label: t('表格视图'),
+      icon: <Table2 size={14} />,
     },
     {
       value: 'tokenUnit',
-      label: t('按K显示单位'),
+      label: tokenUnit === 'K' ? t('1K 单位') : t('1M 单位'),
+      icon: <TextCursorInput size={14} />,
     },
   ];
 
@@ -94,26 +99,22 @@ const PricingDisplaySettings = ({
 
   return (
     <div>
-      <SelectableButtonGroup
+      <PricingFilterChips
         title={t('显示设置')}
         items={items}
         activeValue={getActiveValues()}
         onChange={handleChange}
-        withCheckbox
-        collapsible={false}
         loading={loading}
-        t={t}
       />
 
       {supportsCurrencyDisplay && showWithRecharge && (
-        <SelectableButtonGroup
+        <PricingFilterChips
           title={t('货币单位')}
           items={currencyItems}
           activeValue={currency}
           onChange={setCurrency}
-          collapsible={false}
           loading={loading}
-          t={t}
+          skeletonCount={3}
         />
       )}
     </div>
