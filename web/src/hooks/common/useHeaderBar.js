@@ -94,7 +94,16 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     return false; // 默认不需要登录
   }, [headerNavModules]);
 
+  const isHomeRoute = location.pathname === '/';
+  const isAuthRoute =
+    location.pathname.startsWith('/login') ||
+    location.pathname.startsWith('/register');
   const isConsoleRoute = location.pathname.startsWith('/console');
+  const isSidebarRoute =
+    isConsoleRoute ||
+    location.pathname === '/pricing' ||
+    location.pathname.startsWith('/partners/promoter');
+  const isWorkspaceRoute = !isHomeRoute && !isAuthRoute;
 
   const actualTheme = useActualTheme();
 
@@ -226,6 +235,8 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     partnershipPromoterEnabled,
     isDemoSiteMode,
     isConsoleRoute,
+    isSidebarRoute,
+    isWorkspaceRoute,
     drawerOpen,
     headerNavModules,
     pricingRequireAuth,

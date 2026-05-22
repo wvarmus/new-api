@@ -18,15 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { FileText, Handshake } from 'lucide-react';
 import NewYearButton from './NewYearButton';
-import NotificationButton from './NotificationButton';
 import LanguageSelector from './LanguageSelector';
 import UserArea from './UserArea';
 
 const ActionButtons = ({
   isNewYear,
-  unreadCount,
-  onNoticeOpen,
+  isWorkspaceRoute,
+  rightNavLinks = [],
   currentLang,
   onLanguageChange,
   userState,
@@ -37,21 +38,61 @@ const ActionButtons = ({
   navigate,
   t,
 }) => {
+  const renderRightNavLink = (link) => {
+    const className = `header-action-link ${
+      link.itemKey === 'docs'
+        ? 'header-action-link-primary'
+        : 'header-action-link-secondary'
+    }`;
+    const content = (
+      <>
+        {link.itemKey === 'docs' ? (
+          <FileText size={15} />
+        ) : (
+          <Handshake size={15} />
+        )}
+        <span>{link.text}</span>
+      </>
+    );
+
+    if (link.isExternal) {
+      return (
+        <a
+          key={link.itemKey}
+          href={link.externalLink}
+          target='_blank'
+          rel='noopener noreferrer'
+          className={className}
+        >
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <Link key={link.itemKey} to={link.to} className={className}>
+        {content}
+      </Link>
+    );
+  };
+
   return (
-    <div className='flex items-center gap-2 md:gap-3'>
+    <div className='headerbar-actions flex items-center gap-2 md:gap-3'>
       <NewYearButton isNewYear={isNewYear} />
 
-      <NotificationButton
-        unreadCount={unreadCount}
-        onNoticeOpen={onNoticeOpen}
-        t={t}
-      />
+      {isWorkspaceRoute && rightNavLinks.length > 0 && (
+        <div className='header-action-links'>
+          {rightNavLinks.map(renderRightNavLink)}
+        </div>
+      )}
 
-      <LanguageSelector
-        currentLang={currentLang}
-        onLanguageChange={onLanguageChange}
-        t={t}
-      />
+      {!isWorkspaceRoute && (
+        <LanguageSelector
+          currentLang={currentLang}
+          onLanguageChange={onLanguageChange}
+          t={t}
+        />
+      )}
 
       <UserArea
         userState={userState}

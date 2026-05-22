@@ -25,7 +25,6 @@ import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
 import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
-import NoticeModal from '../../components/layout/NoticeModal';
 import DefaultHomePage from './DefaultHomePage';
 import { shouldRenderDefaultHomePage } from './homeSections';
 
@@ -36,7 +35,6 @@ const Home = () => {
   const [homePageContentLoaded, setHomePageContentLoaded] = useState(false);
   const [rawHomePageContent, setRawHomePageContent] = useState('');
   const [homePageContent, setHomePageContent] = useState('');
-  const [noticeVisible, setNoticeVisible] = useState(false);
   const isMobile = useIsMobile();
   const iframeRef = useRef(null);
   const isDemoSiteMode = statusState?.status?.demo_site_enabled || false;
@@ -81,7 +79,9 @@ const Home = () => {
     while (currentTextNode) {
       const parentTag = currentTextNode.parentElement?.tagName;
       if (!skippedTags.has(parentTag)) {
-        currentTextNode.textContent = translateValue(currentTextNode.textContent);
+        currentTextNode.textContent = translateValue(
+          currentTextNode.textContent,
+        );
       }
       currentTextNode = textWalker.nextNode();
     }
@@ -180,26 +180,6 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const checkNoticeAndShow = async () => {
-      const lastCloseDate = localStorage.getItem('notice_close_date');
-      const today = new Date().toDateString();
-      if (lastCloseDate !== today) {
-        try {
-          const res = await API.get('/api/notice');
-          const { success, data } = res.data;
-          if (success && data && data.trim() !== '') {
-            setNoticeVisible(true);
-          }
-        } catch (error) {
-          console.error('获取公告失败:', error);
-        }
-      }
-    };
-
-    checkNoticeAndShow();
-  }, []);
-
-  useEffect(() => {
     displayHomePageContent().then();
   }, []);
 
@@ -221,7 +201,6 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [endpointItems.length]);
 
-
   const renderDefaultHomePage = shouldRenderDefaultHomePage({
     homePageContentLoaded,
     homePageContent,
@@ -229,11 +208,6 @@ const Home = () => {
 
   return (
     <div className='w-full overflow-x-hidden'>
-      <NoticeModal
-        visible={noticeVisible}
-        onClose={() => setNoticeVisible(false)}
-        isMobile={isMobile}
-      />
       {renderDefaultHomePage ? (
         <DefaultHomePage
           t={t}

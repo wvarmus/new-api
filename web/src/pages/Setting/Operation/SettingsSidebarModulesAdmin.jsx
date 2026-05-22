@@ -47,7 +47,9 @@ export default function SettingsSidebarModulesAdmin(props) {
     },
     console: {
       enabled: true,
+      pricing: true,
       detail: true,
+      announcements: true,
       token: true,
       log: true,
       midjourney: true,
@@ -57,6 +59,7 @@ export default function SettingsSidebarModulesAdmin(props) {
     personal: {
       enabled: true,
       topup: true,
+      partners: true,
       personal: true,
     },
     admin: {
@@ -109,7 +112,9 @@ export default function SettingsSidebarModulesAdmin(props) {
       },
       console: {
         enabled: true,
+        pricing: true,
         detail: true,
+        announcements: true,
         token: true,
         log: true,
         midjourney: true,
@@ -119,6 +124,7 @@ export default function SettingsSidebarModulesAdmin(props) {
       personal: {
         enabled: true,
         topup: true,
+        partners: true,
         personal: true,
       },
       admin: {
@@ -190,14 +196,21 @@ export default function SettingsSidebarModulesAdmin(props) {
           chat: { enabled: true, playground: true, chat: true },
           console: {
             enabled: true,
+            pricing: true,
             detail: true,
+            announcements: true,
             token: true,
             log: true,
             midjourney: true,
             task: true,
             promotion_event: true,
           },
-          personal: { enabled: true, topup: true, personal: true },
+          personal: {
+            enabled: true,
+            topup: true,
+            partners: true,
+            personal: true,
+          },
           admin: {
             enabled: true,
             channel: true,
@@ -234,6 +247,11 @@ export default function SettingsSidebarModulesAdmin(props) {
       title: t('控制台区域'),
       description: t('数据管理和日志查看'),
       modules: [
+        {
+          key: 'pricing',
+          title: t('模型广场'),
+          description: t('模型价格与能力查询'),
+        },
         { key: 'detail', title: t('数据看板'), description: t('系统数据统计') },
         { key: 'token', title: t('令牌管理'), description: t('API令牌管理') },
         { key: 'log', title: t('使用日志'), description: t('API使用记录') },
@@ -248,6 +266,11 @@ export default function SettingsSidebarModulesAdmin(props) {
           title: t('推广事件'),
           description: t('推广Webhook调用记录'),
         },
+        {
+          key: 'announcements',
+          title: t('系统公告'),
+          description: t('系统通知和重要消息'),
+        },
       ],
     },
     {
@@ -256,6 +279,11 @@ export default function SettingsSidebarModulesAdmin(props) {
       description: t('用户个人功能'),
       modules: [
         { key: 'topup', title: t('钱包管理'), description: t('余额充值管理') },
+        {
+          key: 'partners',
+          title: t('推广入口'),
+          description: t('联运推广入口'),
+        },
         {
           key: 'personal',
           title: t('个人设置'),

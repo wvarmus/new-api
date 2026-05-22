@@ -33,7 +33,9 @@ export const DEFAULT_ADMIN_CONFIG = {
   },
   console: {
     enabled: true,
+    pricing: true,
     detail: true,
+    announcements: true,
     token: true,
     log: true,
     midjourney: true,
@@ -43,6 +45,7 @@ export const DEFAULT_ADMIN_CONFIG = {
   personal: {
     enabled: true,
     topup: true,
+    partners: true,
     personal: true,
   },
   admin: {
@@ -114,7 +117,7 @@ export const useSidebar = () => {
         setLoading(true);
       }
 
-      const res = await API.get('/api/user/self');
+      const res = await API.get('/api/user/self', { skipErrorHandler: true });
       if (res.data.success && res.data.data.sidebar_modules) {
         let config;
         // 检查sidebar_modules是字符串还是对象

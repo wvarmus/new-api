@@ -89,6 +89,12 @@ const Navigation = ({
       );
     });
 
+  const visibleLinks = mainNavLinks;
+
+  if (visibleLinks.length === 0) {
+    return null;
+  }
+
   return (
     <nav
       data-header-nav='true'

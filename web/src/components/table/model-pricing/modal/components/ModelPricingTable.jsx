@@ -200,9 +200,9 @@ const ModelPricingTable = ({
           <IconCoinMoneyStroked size={16} />
         </Avatar>
         <div>
-          <Text className='model-detail-section-title'>{t('分组价格')}</Text>
+          <Text className='model-detail-section-title'>{t('支持分组')}</Text>
           <div className='model-detail-section-subtitle'>
-            {t('不同用户分组的价格信息')}
+            {t('以下分组支持该模型调用')}
           </div>
         </div>
       </div>

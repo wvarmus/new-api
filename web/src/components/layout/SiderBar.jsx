@@ -43,6 +43,7 @@ const routerMap = {
   setting: '/console/setting',
   about: '/about',
   detail: '/console',
+  announcements: '/console/announcements',
   pricing: '/pricing',
   task: '/console/task',
   promotion_event: '/console/promotion-event',
@@ -50,6 +51,7 @@ const routerMap = {
   deployment: '/console/deployment',
   playground: '/console/playground',
   personal: '/console/personal',
+  partners: '/partners/promoter',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -71,6 +73,11 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   const workspaceItems = useMemo(() => {
     const items = [
+      {
+        text: t('模型广场'),
+        itemKey: 'pricing',
+        to: '/pricing',
+      },
       {
         text: t('数据看板'),
         itemKey: 'detail',
@@ -112,6 +119,11 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         to: '/promotion-event',
         className: isAdmin() ? '' : 'tableHiddle',
       },
+      {
+        text: t('系统公告'),
+        itemKey: 'announcements',
+        to: '/announcements',
+      },
     ];
 
     // 根据配置过滤项目
@@ -135,6 +147,11 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('钱包管理'),
         itemKey: 'topup',
         to: '/topup',
+      },
+      {
+        text: t('推广入口'),
+        itemKey: 'partners',
+        to: '/partners/promoter',
       },
       {
         text: t('个人设置'),
@@ -311,7 +328,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
   }, [collapsed]);
 
   // 选中高亮颜色（统一）
-  const SELECTED_COLOR = 'var(--semi-color-primary)';
+  const SELECTED_COLOR = '#0f172a';
 
   // 渲染自定义菜单项
   const renderNavItem = (item) => {
@@ -327,7 +344,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         itemKey={item.itemKey}
         text={
           <span
-            className='truncate font-medium text-sm'
+            className='sidebar-nav-text truncate font-medium text-sm'
             style={{ color: textColor }}
           >
             {item.text}
@@ -355,7 +372,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           itemKey={item.itemKey}
           text={
             <span
-              className='truncate font-medium text-sm'
+              className='sidebar-nav-text truncate font-medium text-sm'
               style={{ color: textColor }}
             >
               {item.text}
@@ -377,7 +394,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
                 itemKey={subItem.itemKey}
                 text={
                   <span
-                    className='truncate font-medium text-sm'
+                    className='sidebar-nav-text truncate font-medium text-sm'
                     style={{ color: subTextColor }}
                   >
                     {subItem.text}
@@ -397,7 +414,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
     <div
       className='sidebar-container'
       style={{
-        width: 'var(--sidebar-current-width)',
+        width: 'calc(var(--sidebar-current-width) - 12px)',
       }}
     >
       <SkeletonWrapper
@@ -460,7 +477,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           {hasSectionVisibleModules('console') && (
             <>
               <Divider className='sidebar-divider' />
-              <div>
+              <div className='sidebar-section'>
                 {!collapsed && (
                   <div className='sidebar-group-label'>{t('控制台')}</div>
                 )}
@@ -473,7 +490,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           {hasSectionVisibleModules('personal') && (
             <>
               <Divider className='sidebar-divider' />
-              <div>
+              <div className='sidebar-section'>
                 {!collapsed && (
                   <div className='sidebar-group-label'>{t('个人中心')}</div>
                 )}
@@ -486,7 +503,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           {isAdmin() && hasSectionVisibleModules('admin') && (
             <>
               <Divider className='sidebar-divider' />
-              <div>
+              <div className='sidebar-section'>
                 {!collapsed && (
                   <div className='sidebar-group-label'>{t('管理员')}</div>
                 )}

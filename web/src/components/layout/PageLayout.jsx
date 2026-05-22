@@ -42,12 +42,12 @@ import { useLocation } from 'react-router-dom';
 import { normalizeLanguage } from '../../i18n/language';
 const { Sider, Content, Header } = Layout;
 
-const STATUS_FALLBACK_FOR_PRICING_PAGE = {
+const STATUS_FALLBACK_FOR_PUBLIC_PAGE = {
   setup: true,
   price: 1,
   usd_exchange_rate: 1,
   custom_currency_exchange_rate: 1,
-  custom_currency_symbol: '$',
+  custom_currency_symbol: '¤',
   quota_display_type: 'USD',
 };
 
@@ -69,9 +69,12 @@ const PageLayout = () => {
     '/console/token',
     '/console/midjourney',
     '/console/task',
+    '/console/announcements',
     '/console/promotion-event',
     '/console/models',
+    '/console/topup',
     '/pricing',
+    '/partners/promoter',
   ];
 
   const shouldHideFooter = cardProPages.includes(location.pathname);
@@ -82,7 +85,12 @@ const PageLayout = () => {
     location.pathname !== '/console/playground';
 
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const showSider = isConsoleRoute && (!isMobile || drawerOpen);
+  const isSidebarRoute =
+    isConsoleRoute ||
+    location.pathname === '/pricing' ||
+    location.pathname.startsWith('/partners/promoter');
+  const showSider = isSidebarRoute && (!isMobile || drawerOpen);
+  const sidebarOffset = showSider && !isMobile ? '10px' : '0px';
 
   useEffect(() => {
     if (isMobile && drawerOpen && collapsed) {
@@ -100,10 +108,10 @@ const PageLayout = () => {
 
   const loadStatus = async () => {
     const quietStatusFailure = location.pathname === '/pricing';
-    const applyPricingStatusFallback = () => {
+    const applyPublicStatusFallback = () => {
       statusDispatch({
         type: 'set',
-        payload: STATUS_FALLBACK_FOR_PRICING_PAGE,
+        payload: STATUS_FALLBACK_FOR_PUBLIC_PAGE,
       });
     };
 
@@ -114,13 +122,13 @@ const PageLayout = () => {
         statusDispatch({ type: 'set', payload: data });
         setStatusData(data);
       } else if (quietStatusFailure) {
-        applyPricingStatusFallback();
+        applyPublicStatusFallback();
       } else {
         showError('Unable to connect to server');
       }
     } catch (error) {
       if (quietStatusFailure) {
-        applyPricingStatusFallback();
+        applyPublicStatusFallback();
       } else {
         showError('Failed to load status');
       }
@@ -213,7 +221,7 @@ const PageLayout = () => {
             className='app-sider'
             style={{
               position: 'fixed',
-              left: 0,
+              left: sidebarOffset,
               top: 'var(--header-height)',
               zIndex: 99,
               border: 'none',
@@ -233,7 +241,7 @@ const PageLayout = () => {
             marginLeft: isMobile
               ? '0'
               : showSider
-                ? 'var(--sidebar-current-width)'
+                ? `calc(var(--sidebar-current-width) + ${sidebarOffset})`
                 : '0',
             flex: '1 1 auto',
             display: 'flex',
@@ -245,7 +253,11 @@ const PageLayout = () => {
               flex: '1 0 auto',
               overflowY: isMobile ? 'visible' : 'hidden',
               WebkitOverflowScrolling: 'touch',
-              padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
+              padding: shouldInnerPadding
+                ? isMobile
+                  ? '5px'
+                  : 'var(--workspace-top-gutter) 24px 24px'
+                : '0',
               position: 'relative',
             }}
           >

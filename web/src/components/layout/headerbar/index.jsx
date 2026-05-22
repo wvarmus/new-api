@@ -19,9 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { useHeaderBar } from '../../../hooks/common/useHeaderBar';
-import { useNotifications } from '../../../hooks/common/useNotifications';
 import { useNavigation } from '../../../hooks/common/useNavigation';
-import NoticeModal from '../NoticeModal';
 import MobileMenuButton from './MobileMenuButton';
 import HeaderLogo from './HeaderLogo';
 import Navigation from './Navigation';
@@ -43,7 +41,8 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     docsLink,
     partnershipPromoterEnabled,
     isDemoSiteMode,
-    isConsoleRoute,
+    isSidebarRoute,
+    isWorkspaceRoute,
     headerNavModules,
     pricingRequireAuth,
     logout,
@@ -53,32 +52,28 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     t,
   } = useHeaderBar({ onMobileMenuToggle, drawerOpen });
 
-  const { noticeVisible, unreadCount, handleNoticeOpen, handleNoticeClose } =
-    useNotifications();
-
   const { mainNavLinks } = useNavigation(
     t,
     docsLink,
     headerNavModules,
     partnershipPromoterEnabled,
   );
+  const rightNavLinks = [];
 
   return (
     <header className='text-semi-color-text-0'>
-      <NoticeModal
-        visible={noticeVisible}
-        onClose={handleNoticeClose}
-        isMobile={isMobile}
-      />
-
       <nav
         id='nav'
-        className='header-nav-solid sticky top-0 z-50 w-full border-b border-[#f3f4f6] transition-colors'
+        className={`header-nav-solid sticky top-0 z-50 w-full transition-colors ${
+          isWorkspaceRoute
+            ? 'header-nav-workspace'
+            : 'border-b border-[#f3f4f6]'
+        }`}
       >
-        <div className={getHeaderContainerClass(isConsoleRoute)}>
+        <div className={getHeaderContainerClass(isWorkspaceRoute)}>
           <div className='flex min-w-0 items-center gap-4 xl:gap-8'>
             <MobileMenuButton
-              isConsoleRoute={isConsoleRoute}
+              isConsoleRoute={isSidebarRoute}
               isMobile={isMobile}
               drawerOpen={drawerOpen}
               collapsed={collapsed}
@@ -88,7 +83,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
 
             <HeaderLogo
               isMobile={isMobile}
-              isConsoleRoute={isConsoleRoute}
+              isConsoleRoute={isSidebarRoute}
               logo={logo}
               logoLoaded={logoLoaded}
               isLoading={isLoading}
@@ -109,8 +104,8 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
 
           <ActionButtons
             isNewYear={isNewYear}
-            unreadCount={unreadCount}
-            onNoticeOpen={handleNoticeOpen}
+            isWorkspaceRoute={isWorkspaceRoute}
+            rightNavLinks={rightNavLinks}
             currentLang={currentLang}
             onLanguageChange={handleLanguageChange}
             userState={userState}

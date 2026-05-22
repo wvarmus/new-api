@@ -25,15 +25,13 @@ import {
   Toast,
   Empty,
   Button,
-  Input,
   Tag,
 } from '@douyinfe/semi-ui';
 import {
   IllustrationNoResult,
   IllustrationNoResultDark,
 } from '@douyinfe/semi-illustrations';
-import { Coins } from 'lucide-react';
-import { IconSearch } from '@douyinfe/semi-icons';
+import { Coins, ReceiptText } from 'lucide-react';
 import { API, timestamp2string } from '../../../helpers';
 import { isAdmin } from '../../../helpers/utils';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
@@ -58,22 +56,24 @@ const PAYMENT_METHOD_MAP = {
   wxpay: '微信',
 };
 
+const formatMoney = (value) => {
+  const numericValue = Number(value || 0);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(2) : '0.00';
+};
+
 const TopupHistoryModal = ({ visible, onCancel, t }) => {
   const [loading, setLoading] = useState(false);
   const [topups, setTopups] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [keyword, setKeyword] = useState('');
   const isMobile = useIsMobile();
 
   const loadTopups = async (currentPage, currentPageSize) => {
     setLoading(true);
     try {
       const base = isAdmin() ? '/api/user/topup' : '/api/user/topup/self';
-      const qs =
-        `p=${currentPage}&page_size=${currentPageSize}` +
-        (keyword ? `&keyword=${encodeURIComponent(keyword)}` : '');
+      const qs = `p=${currentPage}&page_size=${currentPageSize}`;
       const endpoint = `${base}?${qs}`;
       const res = await API.get(endpoint);
       const { success, message, data } = res.data;
@@ -94,7 +94,7 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
     if (visible) {
       loadTopups(page, pageSize);
     }
-  }, [visible, page, pageSize, keyword]);
+  }, [visible, page, pageSize]);
 
   const handlePageChange = (currentPage) => {
     setPage(currentPage);
@@ -102,11 +102,6 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
 
   const handlePageSizeChange = (currentPageSize) => {
     setPageSize(currentPageSize);
-    setPage(1);
-  };
-
-  const handleKeywordChange = (value) => {
-    setKeyword(value);
     setPage(1);
   };
 
@@ -139,10 +134,13 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
   // 渲染状态徽章
   const renderStatusBadge = (status) => {
     const config = STATUS_CONFIG[status] || { type: 'primary', key: status };
+    const statusClass = STATUS_CONFIG[status] ? status : 'unknown';
     return (
-      <span className='flex items-center gap-2'>
+      <span
+        className={`wallet-history-status wallet-history-status-${statusClass}`}
+      >
         <Badge dot type={config.type} />
-        <span>{t(config.key)}</span>
+        <span>{config.key ? t(config.key) : '-'}</span>
       </span>
     );
   };
@@ -150,7 +148,11 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
   // 渲染支付方式
   const renderPaymentMethod = (pm) => {
     const displayName = PAYMENT_METHOD_MAP[pm];
-    return <Text>{displayName ? t(displayName) : pm || '-'}</Text>;
+    return (
+      <span className='wallet-history-method'>
+        {displayName ? t(displayName) : pm || '-'}
+      </span>
+    );
   };
 
   const isSubscriptionTopup = (record) => {
@@ -198,7 +200,7 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
             );
           }
           return (
-            <span className='flex items-center gap-1'>
+            <span className='wallet-history-quota'>
               <Coins size={16} />
               <Text>{amount}</Text>
             </span>
@@ -209,7 +211,9 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
         title: t('支付金额'),
         dataIndex: 'money',
         key: 'money',
-        render: (money) => <Text type='danger'>¥{money.toFixed(2)}</Text>,
+        render: (money) => (
+          <span className='wallet-history-money'>¥{formatMoney(money)}</span>
+        ),
       },
       {
         title: t('状态'),
@@ -256,47 +260,62 @@ const TopupHistoryModal = ({ visible, onCancel, t }) => {
 
   return (
     <Modal
-      title={t('充值账单')}
+      title={
+        <div className='wallet-history-title'>
+          <span className='wallet-history-title-icon'>
+            <ReceiptText size={22} />
+          </span>
+          <div>
+            <span>{t('充值账单')}</span>
+            <small>{t('查看充值、订阅套餐与支付状态')}</small>
+          </div>
+        </div>
+      }
       visible={visible}
       onCancel={onCancel}
       footer={null}
+      className='wallet-history-modal'
       size={isMobile ? 'full-width' : 'large'}
+      style={
+        isMobile ? undefined : { width: 1240, maxWidth: 'calc(100vw - 32px)' }
+      }
     >
-      <div className='mb-3'>
-        <Input
-          prefix={<IconSearch />}
-          placeholder={t('订单号')}
-          value={keyword}
-          onChange={handleKeywordChange}
-          showClear
-        />
-      </div>
-      <Table
-        columns={columns}
-        dataSource={topups}
-        loading={loading}
-        rowKey='id'
-        pagination={{
-          currentPage: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          pageSizeOpts: [10, 20, 50, 100],
-          onPageChange: handlePageChange,
-          onPageSizeChange: handlePageSizeChange,
-        }}
-        size='small'
-        empty={
-          <Empty
-            image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
-            darkModeImage={
-              <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
+      <div className='wallet-history-content'>
+        <div className='wallet-history-table-card'>
+          <Table
+            className='wallet-history-table'
+            columns={columns}
+            dataSource={topups}
+            loading={loading}
+            rowKey='id'
+            pagination={{
+              currentPage: page,
+              pageSize: pageSize,
+              total: total,
+              showSizeChanger: true,
+              pageSizeOpts: [10, 20, 50, 100],
+              onPageChange: handlePageChange,
+              onPageSizeChange: handlePageSizeChange,
+            }}
+            size='small'
+            scroll={{ x: userIsAdmin ? 1120 : 980 }}
+            empty={
+              <Empty
+                image={
+                  <IllustrationNoResult style={{ width: 150, height: 150 }} />
+                }
+                darkModeImage={
+                  <IllustrationNoResultDark
+                    style={{ width: 150, height: 150 }}
+                  />
+                }
+                description={t('暂无充值记录')}
+                style={{ padding: 30 }}
+              />
             }
-            description={t('暂无充值记录')}
-            style={{ padding: 30 }}
           />
-        }
-      />
+        </div>
+      </div>
     </Modal>
   );
 };

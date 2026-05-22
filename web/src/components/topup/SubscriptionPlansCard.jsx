@@ -257,7 +257,10 @@ const SubscriptionPlansCard = ({
       {loading ? (
         <div className='space-y-4'>
           {/* 我的订阅骨架屏 */}
-          <Card className='!rounded-xl w-full' bodyStyle={{ padding: '12px' }}>
+          <Card
+            className='wallet-subscription-current-card !rounded-xl w-full'
+            bodyStyle={{ padding: '12px' }}
+          >
             <div className='flex items-center justify-between mb-3'>
               <Skeleton.Title active style={{ width: 100, height: 20 }} />
               <Skeleton.Button active style={{ width: 24, height: 24 }} />
@@ -267,11 +270,11 @@ const SubscriptionPlansCard = ({
             </div>
           </Card>
           {/* 套餐列表骨架屏 */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 w-full px-1'>
+          <div className='wallet-subscription-plan-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 w-full px-1'>
             {[1, 2, 3].map((i) => (
               <Card
                 key={i}
-                className='!rounded-xl w-full h-full'
+                className='wallet-subscription-plan-card wallet-subscription-plan-skeleton !rounded-xl w-full h-full'
                 bodyStyle={{ padding: 16 }}
               >
                 <Skeleton.Title
@@ -302,7 +305,10 @@ const SubscriptionPlansCard = ({
       ) : (
         <Space vertical style={{ width: '100%' }} spacing={8}>
           {/* 当前订阅状态 */}
-          <Card className='!rounded-xl w-full' bodyStyle={{ padding: '12px' }}>
+          <Card
+            className='wallet-subscription-current-card !rounded-xl w-full'
+            bodyStyle={{ padding: '12px' }}
+          >
             <div className='flex items-center justify-between mb-2 gap-3'>
               <div className='flex items-center gap-2 flex-1 min-w-0'>
                 <Text strong>{t('我的订阅')}</Text>
@@ -486,7 +492,7 @@ const SubscriptionPlansCard = ({
 
           {/* 可购买套餐 - 标准定价卡片 */}
           {plans.length > 0 ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 w-full px-1'>
+            <div className='wallet-subscription-plan-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 w-full px-1'>
               {plans.map((p, index) => {
                 const plan = p?.plan;
                 const totalAmount = Number(plan?.total_amount || 0);
@@ -528,7 +534,7 @@ const SubscriptionPlansCard = ({
                 return (
                   <Card
                     key={plan?.id}
-                    className={`!rounded-xl transition-all hover:shadow-lg w-full h-full ${
+                    className={`wallet-subscription-plan-card !rounded-xl transition-all hover:shadow-lg w-full h-full ${
                       isPopular ? 'ring-2 ring-purple-500' : ''
                     }`}
                     bodyStyle={{ padding: 0 }}
@@ -655,9 +661,13 @@ const SubscriptionPlansCard = ({
   return (
     <>
       {withCard ? (
-        <Card className='!rounded-2xl shadow-sm border-0'>{cardContent}</Card>
+        <Card className='wallet-subscription-wrapper !rounded-2xl shadow-sm border-0'>
+          {cardContent}
+        </Card>
       ) : (
-        <div className='space-y-3'>{cardContent}</div>
+        <div className='wallet-subscription-content space-y-3'>
+          {cardContent}
+        </div>
       )}
 
       {/* 购买确认弹窗 */}
