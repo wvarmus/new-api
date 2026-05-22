@@ -38,6 +38,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     logo,
     isNewYear,
     isSelfUseMode,
+    openWebUIEnabled,
     docsLink,
     partnershipPromoterEnabled,
     isDemoSiteMode,
@@ -57,6 +58,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     docsLink,
     headerNavModules,
     partnershipPromoterEnabled,
+    openWebUIEnabled,
   );
   const rightNavLinks = [];
 

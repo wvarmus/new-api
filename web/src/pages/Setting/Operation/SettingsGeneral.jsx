@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useContext, useEffect, useState, useRef, useMemo } from 'react';
 import {
   Banner,
   Button,
@@ -32,21 +32,32 @@ import {
 import {
   compareObjects,
   API,
+  removeTrailingSlash,
+  renderGroupOption,
   showError,
   showSuccess,
   showWarning,
 } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
+import { StatusContext } from '../../../context/Status';
 
 const { Text } = Typography;
 
 export default function GeneralSettings(props) {
   const { t } = useTranslation();
+  const [statusState, statusDispatch] = useContext(StatusContext);
   const [loading, setLoading] = useState(false);
   const [showQuotaWarning, setShowQuotaWarning] = useState(false);
+  const [openWebUIGroupOptions, setOpenWebUIGroupOptions] = useState([]);
   const [inputs, setInputs] = useState({
     TopUpLink: '',
+    ServerAddress: '',
     'general_setting.docs_link': '',
+    'general_setting.open_webui_url': '',
+    'general_setting.open_webui_origin': '',
+    'general_setting.open_webui_token_group': '',
+    'general_setting.open_webui_sso_ttl_seconds': 0,
+    'general_setting.open_webui_sso_secret': '',
     'general_setting.quota_display_type': 'USD',
     'general_setting.custom_currency_symbol': '¤',
     'general_setting.custom_currency_exchange_rate': '',
@@ -78,6 +89,9 @@ export default function GeneralSettings(props) {
       } else {
         value = inputs[item.key];
       }
+      if (item.key === 'ServerAddress') {
+        value = removeTrailingSlash(value || '');
+      }
       return API.put('/api/option/', {
         key: item.key,
         value,
@@ -93,6 +107,7 @@ export default function GeneralSettings(props) {
             return showError(t('部分保存失败，请重试'));
         }
         showSuccess(t('保存成功'));
+        syncStatusContext(updateArray);
         props.refresh();
       })
       .catch(() => {
@@ -101,6 +116,38 @@ export default function GeneralSettings(props) {
       .finally(() => {
         setLoading(false);
       });
+  }
+
+  function syncStatusContext(updateArray) {
+    const statusFieldMap = {
+      ServerAddress: 'server_address',
+      'general_setting.docs_link': 'docs_link',
+      'general_setting.open_webui_url': 'open_webui_url',
+    };
+    const statusPatch = updateArray.reduce((patch, item) => {
+      const statusKey = statusFieldMap[item.key];
+      if (statusKey) {
+        patch[statusKey] =
+          item.key === 'ServerAddress'
+            ? removeTrailingSlash(inputs[item.key] || '')
+            : inputs[item.key];
+      }
+      return patch;
+    }, {});
+
+    if (!Object.keys(statusPatch).length) return;
+
+    const nextStatus = {
+      ...(statusState?.status || {}),
+      ...statusPatch,
+    };
+    if (Object.prototype.hasOwnProperty.call(statusPatch, 'open_webui_url')) {
+      nextStatus.open_webui_enabled = Boolean(
+        String(statusPatch.open_webui_url || '').trim(),
+      );
+    }
+    statusDispatch({ type: 'set', payload: nextStatus });
+    localStorage.setItem('status', JSON.stringify(nextStatus));
   }
 
   // 计算展示在输入框中的“1 USD = X <currency>”中的 X
@@ -142,6 +189,24 @@ export default function GeneralSettings(props) {
   }, [props.options]);
 
   const quotaDisplayType = inputs['general_setting.quota_display_type'];
+
+  const loadOpenWebUIGroups = async () => {
+    const res = await API.get('/api/user/self/groups');
+    const { success, message, data } = res.data;
+    if (!success) {
+      showError(t(message));
+      return;
+    }
+
+    setOpenWebUIGroupOptions([
+      { label: t('默认使用用户所在分组'), value: '', ratio: '' },
+      ...Object.entries(data).map(([group, info]) => ({
+        label: info.desc,
+        value: group,
+        ratio: info.ratio,
+      })),
+    ]);
+  };
 
   const quotaDisplayTypeDesc = useMemo(() => {
     const descMap = {
@@ -227,10 +292,15 @@ export default function GeneralSettings(props) {
       currentInputs['general_setting.custom_currency_exchange_rate'] =
         props.options['general_setting.custom_currency_exchange_rate'];
     }
+    currentInputs['general_setting.open_webui_sso_secret'] = '';
     setInputs(currentInputs);
     setInputsRow(structuredClone(currentInputs));
     refForm.current.setValues(currentInputs);
   }, [props.options]);
+
+  useEffect(() => {
+    loadOpenWebUIGroups();
+  }, []);
 
   return (
     <>
@@ -249,6 +319,19 @@ export default function GeneralSettings(props) {
                   initValue={''}
                   placeholder={t('例如发卡网站的购买链接')}
                   onChange={handleFieldChange('TopUpLink')}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Input
+                  field={'ServerAddress'}
+                  label={t('站点外部访问地址')}
+                  initValue={''}
+                  placeholder={t('例如 https://api.example.com')}
+                  extraText={t(
+                    '用于支付回调、OAuth 回调提示、Open WebUI 访问 /v1 和头像等对外链接',
+                  )}
+                  onChange={handleFieldChange('ServerAddress')}
                   showClear
                 />
               </Col>
@@ -282,12 +365,8 @@ export default function GeneralSettings(props) {
                     'general_setting.quota_display_type',
                   )}
                 >
-                  <Form.Select.Option value='USD'>
-                    USD ($)
-                  </Form.Select.Option>
-                  <Form.Select.Option value='CNY'>
-                    CNY (¥)
-                  </Form.Select.Option>
+                  <Form.Select.Option value='USD'>USD ($)</Form.Select.Option>
+                  <Form.Select.Option value='CNY'>CNY (¥)</Form.Select.Option>
                   {showTokensOption && (
                     <Form.Select.Option value='TOKENS'>
                       Tokens
@@ -349,6 +428,95 @@ export default function GeneralSettings(props) {
               </Col>
             </Row>
             <Row gutter={16}>
+              <Col span={24}>
+                <Banner
+                  type='info'
+                  description={t(
+                    '填写对话嵌入地址后会自动启用顶部“对话”入口和 Open WebUI SSO；留空则关闭。Open WebUI 访问 NewAPI 的 /v1 和头像地址会优先使用上方站点外部访问地址。Open WebUI 端仍需将 NEW_API_SSO_VERIFY_URL 指向当前 NewAPI 的 /api/open-webui/sso/verify。',
+                  )}
+                  bordered
+                  fullMode={false}
+                  closeIcon={null}
+                  style={{ marginBottom: 12 }}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Input
+                  field={'general_setting.open_webui_url'}
+                  label={t('对话嵌入地址')}
+                  initValue={''}
+                  placeholder={t('例如 http://localhost:25500')}
+                  extraText={t('用于对话页面 iframe 嵌入 Open WebUI')}
+                  onChange={handleFieldChange('general_setting.open_webui_url')}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Input
+                  field={'general_setting.open_webui_origin'}
+                  label={t('Open WebUI 消息 Origin')}
+                  initValue={''}
+                  placeholder={t('例如 https://chat.example.com')}
+                  extraText={t(
+                    '通常留空自动从嵌入地址计算；反向代理导致 Origin 不一致时填写',
+                  )}
+                  onChange={handleFieldChange(
+                    'general_setting.open_webui_origin',
+                  )}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Select
+                  field={'general_setting.open_webui_token_group'}
+                  label={t('Open WebUI 令牌创建分组')}
+                  placeholder={t('留空=用户分组，或填写 auto / default / vip')}
+                  optionList={openWebUIGroupOptions}
+                  renderOptionItem={renderGroupOption}
+                  renderSelectedItem={(optionNode) =>
+                    optionNode?.value ? optionNode.value : t('用户分组')
+                  }
+                  extraText={t(
+                    '仅影响新创建的 Open WebUI 专用令牌 chat-default；留空表示默认使用用户所在分组',
+                  )}
+                  onChange={(value) => {
+                    handleFieldChange('general_setting.open_webui_token_group')(
+                      value ?? '',
+                    );
+                  }}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.InputNumber
+                  field={'general_setting.open_webui_sso_ttl_seconds'}
+                  label={t('SSO 凭证有效期（秒）')}
+                  min={0}
+                  precision={0}
+                  placeholder='60'
+                  extraText={t('0 表示使用环境变量或默认 60 秒')}
+                  onChange={handleFieldChange(
+                    'general_setting.open_webui_sso_ttl_seconds',
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Input
+                  field={'general_setting.open_webui_sso_secret'}
+                  label={t('SSO 签名密钥')}
+                  type='password'
+                  placeholder={t('敏感信息不会发送到前端显示')}
+                  extraText={t(
+                    '留空表示保持当前密钥不变；未配置时使用 OPEN_WEBUI_SSO_SECRET 或系统密钥',
+                  )}
+                  onChange={handleFieldChange(
+                    'general_setting.open_webui_sso_secret',
+                  )}
+                  showClear
+                />
+              </Col>
+            </Row>
+            <Row gutter={16}>
               <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                 <Form.Switch
                   field={'DisplayTokenStatEnabled'}
@@ -398,7 +566,9 @@ export default function GeneralSettings(props) {
                   field={'token_setting.max_user_tokens'}
                   step={1}
                   min={1}
-                  extraText={t('每个用户最多可创建的令牌数量，默认 1000，设置过大可能会影响性能')}
+                  extraText={t(
+                    '每个用户最多可创建的令牌数量，默认 1000，设置过大可能会影响性能',
+                  )}
                   placeholder={'1000'}
                   onChange={handleFieldChange('token_setting.max_user_tokens')}
                 />

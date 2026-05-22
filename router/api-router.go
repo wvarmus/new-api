@@ -28,6 +28,16 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/user-agreement", controller.GetUserAgreement)
 		apiRouter.GET("/privacy-policy", controller.GetPrivacyPolicy)
 		apiRouter.GET("/about", controller.GetAbout)
+
+		openWebUIRoute := apiRouter.Group("/open-webui")
+		{
+			openWebUIRoute.GET("/avatar/:user_id", controller.GetOpenWebUIAvatar)
+			openWebUIRoute.POST("/sso/token", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GenerateOpenWebUISSOToken)
+			openWebUIRoute.POST("/sso/verify", middleware.CriticalRateLimit(), controller.VerifyOpenWebUISSOToken)
+			openWebUIRoute.POST("/token-groups", middleware.CriticalRateLimit(), controller.GetOpenWebUITokenGroups)
+			openWebUIRoute.POST("/token-group/switch", middleware.CriticalRateLimit(), controller.SwitchOpenWebUITokenGroup)
+		}
+
 		//apiRouter.GET("/midjourney", controller.GetMidjourney)
 		apiRouter.GET("/home_page_content", controller.GetHomePageContent)
 		apiRouter.GET("/pricing", middleware.TryUserAuth(), controller.GetPricing)

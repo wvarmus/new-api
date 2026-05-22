@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { lazy, Suspense, useContext, useMemo } from 'react';
+import React, { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react';
 import { Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Loading from './components/common/ui/Loading';
 import User from './pages/User';
@@ -34,8 +34,6 @@ import Token from './pages/Token';
 import Redemption from './pages/Redemption';
 import TopUp from './pages/TopUp';
 import Log from './pages/Log';
-import Chat from './pages/Chat';
-import Chat2Link from './pages/Chat2Link';
 import Midjourney from './pages/Midjourney';
 import Pricing from './pages/Pricing';
 import Task from './pages/Task';
@@ -43,7 +41,6 @@ import PromotionEvent from './pages/PromotionEvent';
 import Promoter from './pages/Partners/Promoter';
 import ModelPage from './pages/Model';
 import ModelDeploymentPage from './pages/ModelDeployment';
-import Playground from './pages/Playground';
 import Subscription from './pages/Subscription';
 import OAuth2Callback from './components/auth/OAuth2Callback';
 import PersonalSetting from './components/settings/PersonalSetting';
@@ -51,6 +48,7 @@ import Setup from './pages/Setup';
 import SetupCheck from './components/layout/SetupCheck';
 
 const Home = lazy(() => import('./pages/Home'));
+const Chat = lazy(() => import('./pages/Chat'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Announcements = lazy(() => import('./pages/Announcements'));
 const About = lazy(() => import('./pages/About'));
@@ -62,9 +60,40 @@ function DynamicOAuth2Callback() {
   return <OAuth2Callback type={provider} />;
 }
 
+function ChatKeepAlive({ active, loggedIn }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!loggedIn) {
+      setMounted(false);
+      return;
+    }
+    if (active) {
+      setMounted(true);
+    }
+  }, [active, loggedIn]);
+
+  if (!mounted) return null;
+
+  return (
+    <div style={{ display: active ? 'block' : 'none' }} aria-hidden={!active}>
+      <Suspense fallback={active ? <Loading /> : null}>
+        <Chat />
+      </Suspense>
+    </div>
+  );
+}
+
 function App() {
   const location = useLocation();
   const [statusState] = useContext(StatusContext);
+  const isTopChatRoute =
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/');
+  const isConsoleChatRoute =
+    location.pathname === '/console/chat' ||
+    location.pathname.startsWith('/console/chat/');
+  const isChatRoute = isTopChatRoute || isConsoleChatRoute;
+  const loggedIn = Boolean(localStorage.getItem('user'));
 
   // 获取模型广场权限配置
   const pricingRequireAuth = useMemo(() => {
@@ -90,6 +119,7 @@ function App() {
 
   return (
     <SetupCheck>
+      <ChatKeepAlive active={isChatRoute} loggedIn={loggedIn} />
       <Routes>
         <Route
           path='/'
@@ -105,6 +135,38 @@ function App() {
             <Suspense fallback={<Loading></Loading>} key={location.pathname}>
               <Setup />
             </Suspense>
+          }
+        />
+        <Route
+          path='/chat'
+          element={
+            <PrivateRoute>
+              <></>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/chat/:chatId'
+          element={
+            <PrivateRoute>
+              <></>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/chat'
+          element={
+            <PrivateRoute>
+              <></>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/chat/:chatId'
+          element={
+            <PrivateRoute>
+              <></>
+            </PrivateRoute>
           }
         />
         <Route path='/forbidden' element={<Forbidden />} />
@@ -145,14 +207,6 @@ function App() {
           element={
             <PrivateRoute>
               <Token />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console/playground'
-          element={
-            <PrivateRoute>
-              <Playground />
             </PrivateRoute>
           }
         />
@@ -369,25 +423,6 @@ function App() {
             <Suspense fallback={<Loading></Loading>} key={location.pathname}>
               <PrivacyPolicy />
             </Suspense>
-          }
-        />
-        <Route
-          path='/console/chat/:id?'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <Chat />
-            </Suspense>
-          }
-        />
-        {/* 方便使用chat2link直接跳转聊天... */}
-        <Route
-          path='/chat2link'
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <Chat2Link />
-              </Suspense>
-            </PrivateRoute>
           }
         />
         <Route path='*' element={<NotFound />} />

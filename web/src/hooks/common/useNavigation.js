@@ -24,11 +24,13 @@ export const useNavigation = (
   docsLink,
   headerNavModules,
   partnershipPromoterEnabled = false,
+  openWebUIEnabled = true,
 ) => {
   const mainNavLinks = useMemo(() => {
     // 默认配置，如果没有传入配置则显示所有模块
     const defaultModules = {
       home: true,
+      chat: openWebUIEnabled,
       console: true,
       pricing: true,
       docs: true,
@@ -54,6 +56,11 @@ export const useNavigation = (
         text: t('模型广场'),
         itemKey: 'pricing',
         to: '/pricing',
+      },
+      {
+        text: t('对话'),
+        itemKey: 'chat',
+        to: '/chat',
       },
       ...(docsLink
         ? [
@@ -88,9 +95,18 @@ export const useNavigation = (
           ? modules.pricing.enabled
           : modules.pricing;
       }
+      if (link.itemKey === 'chat') {
+        return openWebUIEnabled && modules.chat === true;
+      }
       return modules[link.itemKey] === true;
     });
-  }, [t, docsLink, headerNavModules, partnershipPromoterEnabled]);
+  }, [
+    t,
+    docsLink,
+    headerNavModules,
+    partnershipPromoterEnabled,
+    openWebUIEnabled,
+  ]);
 
   return {
     mainNavLinks,

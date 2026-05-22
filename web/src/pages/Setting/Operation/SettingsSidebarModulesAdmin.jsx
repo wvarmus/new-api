@@ -42,7 +42,6 @@ export default function SettingsSidebarModulesAdmin(props) {
   const [sidebarModulesAdmin, setSidebarModulesAdmin] = useState({
     chat: {
       enabled: true,
-      playground: true,
       chat: true,
     },
     console: {
@@ -107,7 +106,6 @@ export default function SettingsSidebarModulesAdmin(props) {
     const defaultModules = {
       chat: {
         enabled: true,
-        playground: true,
         chat: true,
       },
       console: {
@@ -185,6 +183,10 @@ export default function SettingsSidebarModulesAdmin(props) {
         setSidebarModulesAdmin((defaults) => ({
           ...defaults,
           ...modules,
+          chat: {
+            ...defaults.chat,
+            ...(modules.chat || {}),
+          },
           console: {
             ...defaults.console,
             ...(modules.console || {}),
@@ -193,7 +195,7 @@ export default function SettingsSidebarModulesAdmin(props) {
       } catch (error) {
         // 使用默认配置
         const defaultModules = {
-          chat: { enabled: true, playground: true, chat: true },
+          chat: { enabled: true, chat: true },
           console: {
             enabled: true,
             pricing: true,
@@ -232,14 +234,9 @@ export default function SettingsSidebarModulesAdmin(props) {
     {
       key: 'chat',
       title: t('聊天区域'),
-      description: t('操练场和聊天功能'),
+      description: t('聊天会话管理'),
       modules: [
-        {
-          key: 'playground',
-          title: t('操练场'),
-          description: t('AI模型测试环境'),
-        },
-        { key: 'chat', title: t('聊天'), description: t('聊天会话管理') },
+        { key: 'chat', title: t('对话'), description: t('聊天会话管理') },
       ],
     },
     {

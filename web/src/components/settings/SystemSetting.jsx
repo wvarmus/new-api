@@ -331,7 +331,9 @@ const SystemSetting = () => {
       showError(t('Webhook地址必须以 http:// 或 https:// 开头'));
       return;
     }
-    const options = [{ key: 'PromotionWebhookUrl', value: PromotionWebhookUrl }];
+    const options = [
+      { key: 'PromotionWebhookUrl', value: PromotionWebhookUrl },
+    ];
     const PromotionWebhookSecret = inputs.PromotionWebhookSecret || '';
     if (PromotionWebhookSecret !== '' || PromotionWebhookUrl === '') {
       options.push({
@@ -367,11 +369,6 @@ const SystemSetting = () => {
       options.push({ key: 'InfistarPromoterBridgeSecret', value: secret });
     }
     await updateOptions(options);
-  };
-
-  const submitServerAddress = async () => {
-    let ServerAddress = removeTrailingSlash(inputs.ServerAddress);
-    await updateOptions([{ key: 'ServerAddress', value: ServerAddress }]);
   };
 
   const submitSMTP = async () => {
@@ -768,28 +765,6 @@ const SystemSetting = () => {
                 marginTop: '10px',
               }}
             >
-              <Card>
-                <Form.Section text={t('通用设置')}>
-                  <Row
-                    gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
-                  >
-                    <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-                      <Form.Input
-                        field='ServerAddress'
-                        label={t('服务器地址')}
-                        placeholder='https://yourdomain.com'
-                        extraText={t(
-                          '该服务器地址将影响支付回调地址以及默认首页展示的地址，请确保正确配置',
-                        )}
-                      />
-                    </Col>
-                  </Row>
-                  <Button onClick={submitServerAddress}>
-                    {t('更新服务器地址')}
-                  </Button>
-                </Form.Section>
-              </Card>
-
               <Card>
                 <Form.Section text={t('代理设置')}>
                   <Banner

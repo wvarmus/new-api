@@ -53,6 +53,9 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   const isNewYear = currentDate.getMonth() === 0 && currentDate.getDate() === 1;
 
   const isSelfUseMode = statusState?.status?.self_use_mode_enabled || false;
+  const openWebUIEnabled = Boolean(
+    String(statusState?.status?.open_webui_url || '').trim(),
+  );
   const docsLink = statusState?.status?.docs_link || '';
   const partnershipPromoterEnabled =
     statusState?.status?.partnership_promoter_enabled === true;
@@ -231,6 +234,7 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     logo,
     isNewYear,
     isSelfUseMode,
+    openWebUIEnabled,
     docsLink,
     partnershipPromoterEnabled,
     isDemoSiteMode,

@@ -46,6 +46,7 @@ export default function SettingsHeaderNavModules(props) {
       enabled: true,
       requireAuth: false, // 默认不需要登录鉴权
     },
+    chat: true,
     partners: true,
     docs: true,
     about: true,
@@ -87,6 +88,7 @@ export default function SettingsHeaderNavModules(props) {
         enabled: true,
         requireAuth: false,
       },
+      chat: true,
       partners: true,
       docs: true,
       about: true,
@@ -144,7 +146,7 @@ export default function SettingsHeaderNavModules(props) {
           };
         }
 
-        setHeaderNavModules({ partners: true, ...modules });
+        setHeaderNavModules({ chat: true, partners: true, ...modules });
       } catch (error) {
         // 使用默认配置
         const defaultModules = {
@@ -154,6 +156,7 @@ export default function SettingsHeaderNavModules(props) {
             enabled: true,
             requireAuth: false,
           },
+          chat: true,
           partners: true,
           docs: true,
           about: true,
@@ -180,6 +183,11 @@ export default function SettingsHeaderNavModules(props) {
       title: t('模型广场'),
       description: t('模型定价，需要登录访问'),
       hasSubConfig: true, // 标识该模块有子配置
+    },
+    {
+      key: 'chat',
+      title: t('对话'),
+      description: t('完整 AI Chat 产品入口'),
     },
     {
       key: 'docs',
