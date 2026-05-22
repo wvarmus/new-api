@@ -85,21 +85,6 @@ func getUserQuotaForPaymentGuardTest(t *testing.T, userID int) int {
 	return user.Quota
 }
 
-func TestRechargeWaffoPancake_RejectsMismatchedPaymentMethod(t *testing.T) {
-	truncateTables(t)
-
-	insertUserForPaymentGuardTest(t, 101, 0)
-	insertTopUpForPaymentGuardTest(t, "waffo-pancake-guard", 101, PaymentMethodStripe)
-
-	err := RechargeWaffoPancake("waffo-pancake-guard")
-	require.Error(t, err)
-
-	topUp := GetTopUpByTradeNo("waffo-pancake-guard")
-	require.NotNil(t, topUp)
-	assert.Equal(t, common.TopUpStatusPending, topUp.Status)
-	assert.Equal(t, 0, getUserQuotaForPaymentGuardTest(t, 101))
-}
-
 func TestUpdatePendingTopUpStatus_RejectsMismatchedPaymentMethod(t *testing.T) {
 	testCases := []struct {
 		name                  string
@@ -109,18 +94,11 @@ func TestUpdatePendingTopUpStatus_RejectsMismatchedPaymentMethod(t *testing.T) {
 		targetStatus          string
 	}{
 		{
-			name:                  "stripe expire",
-			tradeNo:               "stripe-expire-guard",
-			storedPaymentMethod:   PaymentMethodCreem,
-			expectedPaymentMethod: PaymentMethodStripe,
+			name:                  "wechat expires alipay order",
+			tradeNo:               "direct-expire-guard",
+			storedPaymentMethod:   PaymentMethodAlipayDirect,
+			expectedPaymentMethod: PaymentMethodDirectWechat,
 			targetStatus:          common.TopUpStatusExpired,
-		},
-		{
-			name:                  "waffo failed",
-			tradeNo:               "waffo-failed-guard",
-			storedPaymentMethod:   PaymentMethodStripe,
-			expectedPaymentMethod: PaymentMethodWaffo,
-			targetStatus:          common.TopUpStatusFailed,
 		},
 	}
 
@@ -142,9 +120,9 @@ func TestCompleteSubscriptionOrder_RejectsMismatchedPaymentMethod(t *testing.T) 
 
 	insertUserForPaymentGuardTest(t, 202, 0)
 	plan := insertSubscriptionPlanForPaymentGuardTest(t, 301)
-	insertSubscriptionOrderForPaymentGuardTest(t, "sub-guard-order", 202, plan.Id, PaymentMethodStripe)
+	insertSubscriptionOrderForPaymentGuardTest(t, "sub-guard-order", 202, plan.Id, PaymentMethodDirectWechat)
 
-	err := CompleteSubscriptionOrder("sub-guard-order", `{"provider":"epay"}`, "alipay")
+	err := CompleteSubscriptionOrder("sub-guard-order", `{"provider":"alipay"}`, PaymentMethodAlipayDirect)
 	require.ErrorIs(t, err, ErrPaymentMethodMismatch)
 
 	order := GetSubscriptionOrderByTradeNo("sub-guard-order")
@@ -161,9 +139,9 @@ func TestExpireSubscriptionOrder_RejectsMismatchedPaymentMethod(t *testing.T) {
 
 	insertUserForPaymentGuardTest(t, 303, 0)
 	plan := insertSubscriptionPlanForPaymentGuardTest(t, 401)
-	insertSubscriptionOrderForPaymentGuardTest(t, "sub-expire-guard", 303, plan.Id, PaymentMethodStripe)
+	insertSubscriptionOrderForPaymentGuardTest(t, "sub-expire-guard", 303, plan.Id, PaymentMethodDirectWechat)
 
-	err := ExpireSubscriptionOrder("sub-expire-guard", PaymentMethodCreem)
+	err := ExpireSubscriptionOrder("sub-expire-guard", PaymentMethodAlipayDirect)
 	require.ErrorIs(t, err, ErrPaymentMethodMismatch)
 
 	order := GetSubscriptionOrderByTradeNo("sub-expire-guard")

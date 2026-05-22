@@ -35,7 +35,6 @@ import {
 import {
   IconCalendarClock,
   IconClose,
-  IconCreditCard,
   IconSave,
 } from '@douyinfe/semi-icons';
 import { Clock, RefreshCw } from 'lucide-react';
@@ -95,8 +94,6 @@ const AddEditSubscriptionModal = ({
     max_purchase_per_user: 0,
     total_amount: 0,
     upgrade_group: '',
-    stripe_price_id: '',
-    creem_product_id: '',
   });
 
   const buildFormValues = () => {
@@ -121,8 +118,6 @@ const AddEditSubscriptionModal = ({
         quotaToDisplayAmount(p.total_amount || 0).toFixed(2),
       ),
       upgrade_group: p.upgrade_group || '',
-      stripe_price_id: p.stripe_price_id || '',
-      creem_product_id: p.creem_product_id || '',
     };
   };
 
@@ -501,46 +496,6 @@ const AddEditSubscriptionModal = ({
                   </Row>
                 </Card>
 
-                {/* 第三方支付配置 */}
-                <Card className='!rounded-2xl shadow-sm border-0 mb-4'>
-                  <div className='flex items-center mb-2'>
-                    <Avatar
-                      size='small'
-                      color='purple'
-                      className='mr-2 shadow-md'
-                    >
-                      <IconCreditCard size={16} />
-                    </Avatar>
-                    <div>
-                      <Text className='text-lg font-medium'>
-                        {t('第三方支付配置')}
-                      </Text>
-                      <div className='text-xs text-gray-600'>
-                        {t('Stripe/Creem 商品ID（可选）')}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Row gutter={12}>
-                    <Col span={24}>
-                      <Form.Input
-                        field='stripe_price_id'
-                        label='Stripe PriceId'
-                        placeholder='price_...'
-                        showClear
-                      />
-                    </Col>
-
-                    <Col span={24}>
-                      <Form.Input
-                        field='creem_product_id'
-                        label='Creem ProductId'
-                        placeholder='prod_...'
-                        showClear
-                      />
-                    </Col>
-                  </Row>
-                </Card>
               </div>
             )}
           </Form>

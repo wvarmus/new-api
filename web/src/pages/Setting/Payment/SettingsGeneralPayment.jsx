@@ -36,7 +36,6 @@ export default function SettingsGeneralPayment(props) {
     ServerAddress: '',
     CustomCallbackAddress: '',
     TopupGroupRatio: '',
-    PayMethods: '',
     AmountOptions: '',
     AmountDiscount: '',
   });
@@ -49,7 +48,6 @@ export default function SettingsGeneralPayment(props) {
         ServerAddress: props.options.ServerAddress || '',
         CustomCallbackAddress: props.options.CustomCallbackAddress || '',
         TopupGroupRatio: props.options.TopupGroupRatio || '',
-        PayMethods: props.options.PayMethods || '',
         AmountOptions: props.options.AmountOptions || '',
         AmountDiscount: props.options.AmountDiscount || '',
       };
@@ -69,14 +67,6 @@ export default function SettingsGeneralPayment(props) {
       !verifyJSON(inputs.TopupGroupRatio)
     ) {
       showError(t('充值分组倍率不是合法的 JSON 字符串'));
-      return;
-    }
-
-    if (
-      originInputs.PayMethods !== inputs.PayMethods &&
-      !verifyJSON(inputs.PayMethods)
-    ) {
-      showError(t('充值方式设置不是合法的 JSON 字符串'));
       return;
     }
 
@@ -116,9 +106,6 @@ export default function SettingsGeneralPayment(props) {
       if (originInputs.TopupGroupRatio !== inputs.TopupGroupRatio) {
         options.push({ key: 'TopupGroupRatio', value: inputs.TopupGroupRatio });
       }
-      if (originInputs.PayMethods !== inputs.PayMethods) {
-        options.push({ key: 'PayMethods', value: inputs.PayMethods });
-      }
       if (originInputs.AmountOptions !== inputs.AmountOptions) {
         options.push({
           key: 'payment_setting.amount_options',
@@ -157,6 +144,79 @@ export default function SettingsGeneralPayment(props) {
     setLoading(false);
   };
 
+  const formContent = (
+    <>
+      <Form.Input
+        field='ServerAddress'
+        label={t('服务器地址')}
+        placeholder={'https://yourdomain.com'}
+        style={{ width: '100%' }}
+        extraText={t(
+          '该服务器地址将影响支付回调地址以及默认首页展示的地址，请确保正确配置',
+        )}
+      />
+      <Row
+        gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
+        style={{ marginTop: 16 }}
+      >
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Form.Input
+            field='CustomCallbackAddress'
+            label={t('回调地址')}
+            placeholder={t('例如：https://yourdomain.com')}
+            extraText={t(
+              '留空时默认使用服务器地址作为回调地址，填写后将覆盖默认值',
+            )}
+          />
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Form.TextArea
+            field='TopupGroupRatio'
+            label={t('充值分组倍率')}
+            placeholder={t('为一个 JSON 文本，键为组名称，值为倍率')}
+            autosize
+          />
+        </Col>
+      </Row>
+      <Row
+        gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
+        style={{ marginTop: 16 }}
+      >
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Form.TextArea
+            field='AmountOptions'
+            label={t('自定义充值数量选项')}
+            placeholder={t(
+              '为一个 JSON 数组，例如：[10, 20, 50, 100, 200, 500]',
+            )}
+            autosize
+            extraText={t(
+              '设置用户可选择的充值数量选项，例如：[10, 20, 50, 100, 200, 500]',
+            )}
+          />
+        </Col>
+      </Row>
+      <Row style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Form.TextArea
+            field='AmountDiscount'
+            label={t('充值金额折扣配置')}
+            placeholder={t(
+              '为一个 JSON 对象，例如：{"100": 0.95, "200": 0.9, "500": 0.85}',
+            )}
+            autosize
+            extraText={t(
+              '设置不同充值金额对应的折扣，键为充值金额，值为折扣率，例如：{"100": 0.95, "200": 0.9, "500": 0.85}',
+            )}
+          />
+        </Col>
+      </Row>
+      <Button onClick={submitGeneralSettings} style={{ marginTop: 16 }}>
+        {t('保存通用设置')}
+      </Button>
+    </>
+  );
+
   return (
     <Spin spinning={loading}>
       <Form
@@ -164,84 +224,11 @@ export default function SettingsGeneralPayment(props) {
         onValueChange={handleFormChange}
         getFormApi={(api) => (formApiRef.current = api)}
       >
-        <Form.Section text={sectionTitle}>
-          <Form.Input
-            field='ServerAddress'
-            label={t('服务器地址')}
-            placeholder={'https://yourdomain.com'}
-            style={{ width: '100%' }}
-            extraText={t(
-              '该服务器地址将影响支付回调地址以及默认首页展示的地址，请确保正确配置',
-            )}
-          />
-          <Row
-            gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
-            style={{ marginTop: 16 }}
-          >
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-              <Form.Input
-                field='CustomCallbackAddress'
-                label={t('回调地址')}
-                placeholder={t('例如：https://yourdomain.com')}
-                extraText={t(
-                  '留空时默认使用服务器地址作为回调地址，填写后将覆盖默认值',
-                )}
-              />
-            </Col>
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-              <Form.TextArea
-                field='TopupGroupRatio'
-                label={t('充值分组倍率')}
-                placeholder={t('为一个 JSON 文本，键为组名称，值为倍率')}
-                autosize
-              />
-            </Col>
-          </Row>
-          <Row
-            gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
-            style={{ marginTop: 16 }}
-          >
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-              <Form.TextArea
-                field='PayMethods'
-                label={t('充值方式设置')}
-                placeholder={t('为一个 JSON 文本')}
-                autosize
-              />
-            </Col>
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-              <Form.TextArea
-                field='AmountOptions'
-                label={t('自定义充值数量选项')}
-                placeholder={t(
-                  '为一个 JSON 数组，例如：[10, 20, 50, 100, 200, 500]',
-                )}
-                autosize
-                extraText={t(
-                  '设置用户可选择的充值数量选项，例如：[10, 20, 50, 100, 200, 500]',
-                )}
-              />
-            </Col>
-          </Row>
-          <Row style={{ marginTop: 16 }}>
-            <Col span={24}>
-              <Form.TextArea
-                field='AmountDiscount'
-                label={t('充值金额折扣配置')}
-                placeholder={t(
-                  '为一个 JSON 对象，例如：{"100": 0.95, "200": 0.9, "500": 0.85}',
-                )}
-                autosize
-                extraText={t(
-                  '设置不同充值金额对应的折扣，键为充值金额，值为折扣率，例如：{"100": 0.95, "200": 0.9, "500": 0.85}',
-                )}
-              />
-            </Col>
-          </Row>
-          <Button onClick={submitGeneralSettings} style={{ marginTop: 16 }}>
-            {t('保存通用设置')}
-          </Button>
-        </Form.Section>
+        {sectionTitle ? (
+          <Form.Section text={sectionTitle}>{formContent}</Form.Section>
+        ) : (
+          formContent
+        )}
       </Form>
     </Spin>
   );
