@@ -65,12 +65,11 @@ import {
 
 import {
   LayoutDashboard,
-  TerminalSquare,
-  MessageSquare,
   Key,
   BarChart3,
   Image as ImageIcon,
   CheckSquare,
+  MessageCircle,
   Megaphone,
   CreditCard,
   Layers,
@@ -133,10 +132,6 @@ export function getLucideIcon(key, selected = false) {
       return <Handshake {...commonProps} color={iconColor} />;
     case 'announcements':
       return <Bell {...commonProps} color={iconColor} />;
-    case 'playground':
-      return <TerminalSquare {...commonProps} color={iconColor} />;
-    case 'chat':
-      return <MessageSquare {...commonProps} color={iconColor} />;
     case 'token':
       return <Key {...commonProps} color={iconColor} />;
     case 'log':
@@ -145,6 +140,8 @@ export function getLucideIcon(key, selected = false) {
       return <ImageIcon {...commonProps} color={iconColor} />;
     case 'task':
       return <CheckSquare {...commonProps} color={iconColor} />;
+    case 'chat':
+      return <MessageCircle {...commonProps} color={iconColor} />;
     case 'promotion_event':
       return <Megaphone {...commonProps} color={iconColor} />;
     case 'topup':

@@ -48,30 +48,6 @@ export async function fetchTokenKeysBatch(tokenIds) {
 }
 
 /**
- * 获取可用的 token keys
- * @returns {Promise<string[]>} 返回 active 状态的不带 sk- 前缀的真实 token key 数组
- */
-export async function fetchTokenKeys() {
-  try {
-    const response = await API.get('/api/token/?p=1&size=10');
-    const { success, data } = response.data;
-    if (!success) throw new Error('Failed to fetch token keys');
-
-    const tokenItems = Array.isArray(data) ? data : data.items || [];
-    const activeTokens = tokenItems.filter((token) => token.status === 1);
-    const keyResults = await Promise.allSettled(
-      activeTokens.map((token) => fetchTokenKey(token.id)),
-    );
-    return keyResults
-      .filter((result) => result.status === 'fulfilled' && result.value)
-      .map((result) => result.value);
-  } catch (error) {
-    console.error('Error fetching token keys:', error);
-    return [];
-  }
-}
-
-/**
  * 获取服务器地址
  * @returns {string} 服务器地址
  */

@@ -399,7 +399,6 @@ func GetSelf(c *gin.Context) {
 		"request_count":   user.RequestCount,
 		"linux_do_id":     user.LinuxDOId,
 		"setting":         user.Setting,
-		"stripe_customer": user.StripeCustomer,
 		"sidebar_modules": userSetting.SidebarModules, // 正确提取sidebar_modules字段
 		"permissions":     permissions,                // 新增权限字段
 	}
@@ -443,13 +442,6 @@ func calculateUserPermissions(userRole int) map[string]interface{} {
 // 根据用户角色生成默认的边栏配置
 func generateDefaultSidebarConfig(userRole int) string {
 	defaultConfig := map[string]interface{}{}
-
-	// 聊天区域 - 所有用户都可以访问
-	defaultConfig["chat"] = map[string]interface{}{
-		"enabled":    true,
-		"playground": true,
-		"chat":       true,
-	}
 
 	// 控制台区域 - 所有用户都可以访问
 	defaultConfig["console"] = map[string]interface{}{

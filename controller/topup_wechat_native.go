@@ -82,7 +82,7 @@ func RequestWechatNativePay(c *gin.Context) {
 		return
 	}
 
-	codeURL, err := createWechatNativeTransaction(c.Request.Context(), tradeNo, req.Amount, moneyCents)
+	codeURL, err := createWechatNativeTransaction(c.Request.Context(), tradeNo, fmt.Sprintf("TUC%d", req.Amount), moneyCents)
 	if err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("微信支付 Native 拉起支付失败 user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
 		_ = model.UpdatePendingTopUpStatus(tradeNo, model.PaymentMethodDirectWechat, common.TopUpStatusFailed)
@@ -93,7 +93,7 @@ func RequestWechatNativePay(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": gin.H{"code_url": codeURL, "trade_no": tradeNo}})
 }
 
-func createWechatNativeTransaction(ctx context.Context, tradeNo string, amount int64, moneyCents int64) (string, error) {
+func createWechatNativeTransaction(ctx context.Context, tradeNo string, description string, moneyCents int64) (string, error) {
 	client, err := newWechatPayClient()
 	if err != nil {
 		return "", err
@@ -103,7 +103,7 @@ func createWechatNativeTransaction(ctx context.Context, tradeNo string, amount i
 	bm := make(gopay.BodyMap)
 	bm.Set("appid", setting.WechatNativeAppId).
 		Set("mchid", setting.WechatNativeMchId).
-		Set("description", fmt.Sprintf("TUC%d", amount)).
+		Set("description", description).
 		Set("out_trade_no", tradeNo).
 		Set("notify_url", notifyURL).
 		SetBodyMap("amount", func(amountMap gopay.BodyMap) {
@@ -176,6 +176,20 @@ func WechatNativeNotify(c *gin.Context) {
 
 	LockOrder(transaction.OutTradeNo)
 	defer UnlockOrder(transaction.OutTradeNo)
+	if model.GetSubscriptionOrderByTradeNo(transaction.OutTradeNo) != nil {
+		if err := completeDirectPaySubscriptionOrder(transaction.OutTradeNo, int64(transaction.Amount.Total), common.GetJsonString(transaction), model.PaymentMethodDirectWechat); err != nil {
+			if errors.Is(err, model.ErrSubscriptionOrderStatusInvalid) {
+				c.JSON(http.StatusOK, gin.H{"code": "SUCCESS", "message": "成功"})
+				return
+			}
+			logger.LogError(c.Request.Context(), fmt.Sprintf("微信支付 Native 订阅完成失败 trade_no=%s client_ip=%s error=%q", transaction.OutTradeNo, c.ClientIP(), err.Error()))
+			c.JSON(http.StatusOK, gin.H{"code": "FAIL", "message": "subscription failed"})
+			return
+		}
+		service.EmitPromotionSubscriptionPaid(model.GetTopUpByTradeNo(transaction.OutTradeNo), "CNY")
+		c.JSON(http.StatusOK, gin.H{"code": "SUCCESS", "message": "成功"})
+		return
+	}
 	if err := model.RechargeWechatNative(transaction.OutTradeNo, int64(transaction.Amount.Total), c.ClientIP()); err != nil {
 		if strings.Contains(err.Error(), "状态错误") {
 			c.JSON(http.StatusOK, gin.H{"code": "SUCCESS", "message": "成功"})

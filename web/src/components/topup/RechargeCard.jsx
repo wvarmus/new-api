@@ -35,8 +35,6 @@ const { Text } = Typography;
 
 const RechargeCard = ({
   t,
-  enableOnlineTopUp,
-  enableStripeTopUp,
   presetAmounts,
   selectedPreset,
   selectPresetAmount,
@@ -64,8 +62,6 @@ const RechargeCard = ({
   userState,
   renderQuota,
   statusLoading,
-  enableWaffoTopUp,
-  enableWaffoPancakeTopUp,
   enableWechatNativeTopUp,
   enableAlipayTopUp,
   historySlot,
@@ -78,21 +74,17 @@ const RechargeCard = ({
   const [activePaymentTab, setActivePaymentTab] = useState('alipay');
   const regularPayMethods = payMethods || [];
 
-  const hasOnlineTopup =
-    enableOnlineTopUp ||
-    enableStripeTopUp ||
-    enableWaffoTopUp ||
-    enableWaffoPancakeTopUp ||
-    enableWechatNativeTopUp ||
-    enableAlipayTopUp;
+  const isPaymentMethodEnabled = (payMethod) => {
+    if (!payMethod?.type) return false;
+    if (payMethod.type === 'direct_alipay') return enableAlipayTopUp;
+    if (payMethod.type === 'direct_wechat_native') {
+      return enableWechatNativeTopUp;
+    }
+    return false;
+  };
 
-  const hasQuotaTopup =
-    enableOnlineTopUp ||
-    enableStripeTopUp ||
-    enableWaffoTopUp ||
-    enableWaffoPancakeTopUp ||
-    enableWechatNativeTopUp ||
-    enableAlipayTopUp;
+  const hasQuotaTopup = regularPayMethods.some(isPaymentMethodEnabled);
+  const hasOnlineTopup = hasQuotaTopup;
 
   const metrics = [
     {
@@ -150,39 +142,19 @@ const RechargeCard = ({
     };
   };
 
-  const isPaymentMethodEnabled = (payMethod) => {
-    if (!payMethod) return false;
-    if (!payMethod.type) return false;
-    if (payMethod.type === 'direct_alipay') return enableAlipayTopUp;
-    if (payMethod.type === 'direct_wechat_native')
-      return enableWechatNativeTopUp;
-    if (payMethod.type === 'stripe') return enableStripeTopUp;
-    if (payMethod.type === 'waffo_pancake') return enableWaffoPancakeTopUp;
-    if (
-      typeof payMethod.type === 'string' &&
-      payMethod.type.startsWith('waffo:')
-    ) {
-      return enableWaffoTopUp;
-    }
-    if (payMethod.type === 'alipay' || payMethod.type === 'wxpay') {
-      return enableOnlineTopUp;
-    }
-    return enableOnlineTopUp;
-  };
-
   const getPaymentMethodIcon = (type) => {
-    if (type === 'direct_alipay' || type === 'alipay') {
+    if (type === 'direct_alipay') {
       return <SiAlipay size={18} />;
     }
-    if (type === 'direct_wechat_native' || type === 'wxpay') {
+    if (type === 'direct_wechat_native') {
       return <SiWechat size={18} />;
     }
     return <CreditCard size={18} />;
   };
 
   const getPaymentMethodTone = (type) => {
-    if (type === 'direct_alipay' || type === 'alipay') return 'alipay';
-    if (type === 'direct_wechat_native' || type === 'wxpay') return 'wechat';
+    if (type === 'direct_alipay') return 'alipay';
+    if (type === 'direct_wechat_native') return 'wechat';
     return 'generic';
   };
 
@@ -198,25 +170,9 @@ const RechargeCard = ({
         tone: getPaymentMethodTone(method.type),
         disabled: false,
       }));
-    const alipayMethod = null;
-    const wechatMethod = null;
 
     return [
       ...availablePaymentTabs,
-      {
-        key: 'alipay',
-        label: t('支付宝'),
-        icon: <SiAlipay size={18} />,
-        method: alipayMethod,
-        disabled: !isPaymentMethodEnabled(alipayMethod),
-      },
-      {
-        key: 'wechat',
-        label: t('微信'),
-        icon: <SiWechat size={18} />,
-        method: wechatMethod,
-        disabled: !isPaymentMethodEnabled(wechatMethod),
-      },
       {
         key: 'redeem',
         label: t('兑换码'),
@@ -224,17 +180,8 @@ const RechargeCard = ({
         method: null,
         disabled: false,
       },
-    ].filter((tab) => tab.key === 'redeem' || !tab.disabled);
-  }, [
-    regularPayMethods,
-    enableOnlineTopUp,
-    enableStripeTopUp,
-    enableWaffoTopUp,
-    enableWaffoPancakeTopUp,
-    enableWechatNativeTopUp,
-    enableAlipayTopUp,
-    t,
-  ]);
+    ];
+  }, [regularPayMethods, enableWechatNativeTopUp, enableAlipayTopUp, t]);
 
   const selectedPaymentTab =
     paymentTabs.find((item) => item.key === activePaymentTab) ||

@@ -40,7 +40,6 @@ import {
   showSuccess,
   showError,
 } from '../../../../helpers';
-import CodeViewer from '../../../playground/CodeViewer';
 import { StatusContext } from '../../../../context/Status';
 import { UserContext } from '../../../../context/User';
 import { useUserPermissions } from '../../../../hooks/common/useUserPermissions';
@@ -66,7 +65,6 @@ const NotificationSettings = ({
   const [sidebarModulesUser, setSidebarModulesUser] = useState({
     chat: {
       enabled: true,
-      playground: true,
       chat: true,
     },
     console: {
@@ -158,7 +156,10 @@ const NotificationSettings = ({
 
   const resetSidebarModules = () => {
     const defaultConfig = {
-      chat: { enabled: true, playground: true, chat: true },
+      chat: {
+        enabled: true,
+        chat: true,
+      },
       console: {
         enabled: true,
         detail: true,
@@ -214,6 +215,10 @@ const NotificationSettings = ({
           setSidebarModulesUser((defaults) => ({
             ...defaults,
             ...userConf,
+            chat: {
+              ...defaults.chat,
+              ...(userConf.chat || {}),
+            },
             console: {
               ...defaults.console,
               ...(userConf.console || {}),
@@ -258,14 +263,9 @@ const NotificationSettings = ({
     {
       key: 'chat',
       title: t('聊天区域'),
-      description: t('操练场和聊天功能'),
+      description: t('聊天会话管理'),
       modules: [
-        {
-          key: 'playground',
-          title: t('操练场'),
-          description: t('AI模型测试环境'),
-        },
-        { key: 'chat', title: t('聊天'), description: t('聊天会话管理') },
+        { key: 'chat', title: t('对话'), description: t('聊天会话管理') },
       ],
     },
     {
@@ -569,20 +569,20 @@ const NotificationSettings = ({
 
                     <Form.Slot label={t('Webhook请求结构说明')}>
                       <div>
-                        <div style={{ height: '200px', marginBottom: '12px' }}>
-                          <CodeViewer
-                            content={{
+                        <pre className='mb-3 max-h-[200px] overflow-auto rounded border border-gray-200 bg-gray-50 p-3 text-xs'>
+                          {JSON.stringify(
+                            {
                               type: 'quota_exceed',
                               title: '额度预警通知',
                               content:
                                 '您的额度即将用尽，当前剩余额度为 {{value}}',
                               values: ['$0.99'],
                               timestamp: 1739950503,
-                            }}
-                            title='webhook'
-                            language='json'
-                          />
-                        </div>
+                            },
+                            null,
+                            2,
+                          )}
+                        </pre>
                         <div className='text-xs text-gray-500 leading-relaxed'>
                           <div>
                             <strong>type:</strong>{' '}

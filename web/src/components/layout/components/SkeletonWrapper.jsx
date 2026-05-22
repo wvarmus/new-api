@@ -293,7 +293,6 @@ const SkeletonWrapper = ({
     }
 
     const sections = [
-      { key: 'chat', titleWidth: 32, itemWidths: [54, 32], wrapper: 'section' },
       { key: 'console', titleWidth: 48, itemWidths: [64, 64, 64, 64, 64] },
       { key: 'personal', titleWidth: 64, itemWidths: [64, 64] },
       ...(showAdmin

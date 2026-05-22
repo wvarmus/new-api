@@ -23,6 +23,7 @@ import {
   Button,
   Card,
   Divider,
+  Modal,
   Select,
   Skeleton,
   Space,
@@ -33,6 +34,7 @@ import {
 import { API, showError, showSuccess, renderQuota } from '../../helpers';
 import { getCurrencyConfig } from '../../helpers/render';
 import { RefreshCw, Sparkles } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import SubscriptionPurchaseModal from './modals/SubscriptionPurchaseModal';
 import {
   formatSubscriptionDuration,
@@ -41,42 +43,11 @@ import {
 
 const { Text } = Typography;
 
-// 过滤易支付方式
-function getEpayMethods(payMethods = []) {
-  return (payMethods || []).filter(
-    (m) => m?.type && m.type !== 'stripe' && m.type !== 'creem',
-  );
-}
-
-// 提交易支付表单
-function submitEpayForm({ url, params }) {
-  const form = document.createElement('form');
-  form.action = url;
-  form.method = 'POST';
-  const isSafari =
-    navigator.userAgent.indexOf('Safari') > -1 &&
-    navigator.userAgent.indexOf('Chrome') < 1;
-  if (!isSafari) form.target = '_blank';
-  Object.keys(params || {}).forEach((key) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = params[key];
-    form.appendChild(input);
-  });
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
-}
-
 const SubscriptionPlansCard = ({
   t,
   loading = false,
   plans = [],
   payMethods = [],
-  enableOnlineTopUp = false,
-  enableStripeTopUp = false,
-  enableCreemTopUp = false,
   billingPreference,
   onChangeBillingPreference,
   activeSubscriptions = [],
@@ -87,14 +58,23 @@ const SubscriptionPlansCard = ({
   const [open, setOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [paying, setPaying] = useState(false);
-  const [selectedEpayMethod, setSelectedEpayMethod] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [wechatNativeOpen, setWechatNativeOpen] = useState(false);
+  const [wechatNativePayData, setWechatNativePayData] = useState(null);
+  const [alipayOpen, setAlipayOpen] = useState(false);
+  const [alipayPayData, setAlipayPayData] = useState(null);
 
-  const epayMethods = useMemo(() => getEpayMethods(payMethods), [payMethods]);
+  const hasDirectWechat = useMemo(
+    () => payMethods.some((m) => m?.type === 'direct_wechat_native'),
+    [payMethods],
+  );
+  const hasDirectAlipay = useMemo(
+    () => payMethods.some((m) => m?.type === 'direct_alipay'),
+    [payMethods],
+  );
 
   const openBuy = (p) => {
     setSelectedPlan(p);
-    setSelectedEpayMethod(epayMethods?.[0]?.type || '');
     setOpen(true);
   };
 
@@ -113,19 +93,16 @@ const SubscriptionPlansCard = ({
     }
   };
 
-  const payStripe = async () => {
-    if (!selectedPlan?.plan?.stripe_price_id) {
-      showError(t('该套餐未配置 Stripe'));
-      return;
-    }
+  const payDirectWechat = async () => {
     setPaying(true);
     try {
-      const res = await API.post('/api/subscription/stripe/pay', {
+      const res = await API.post('/api/subscription/direct-pay/wechat-native/pay', {
         plan_id: selectedPlan.plan.id,
       });
       if (res.data?.message === 'success') {
-        window.open(res.data.data?.pay_link, '_blank');
-        showSuccess(t('已打开支付页面'));
+        setWechatNativePayData(res.data.data || null);
+        setWechatNativeOpen(true);
+        showSuccess(t('已发起支付'));
         closeBuy();
       } else {
         const errorMsg =
@@ -141,47 +118,15 @@ const SubscriptionPlansCard = ({
     }
   };
 
-  const payCreem = async () => {
-    if (!selectedPlan?.plan?.creem_product_id) {
-      showError(t('该套餐未配置 Creem'));
-      return;
-    }
+  const payDirectAlipay = async () => {
     setPaying(true);
     try {
-      const res = await API.post('/api/subscription/creem/pay', {
+      const res = await API.post('/api/subscription/direct-pay/alipay/pay', {
         plan_id: selectedPlan.plan.id,
       });
       if (res.data?.message === 'success') {
-        window.open(res.data.data?.checkout_url, '_blank');
-        showSuccess(t('已打开支付页面'));
-        closeBuy();
-      } else {
-        const errorMsg =
-          typeof res.data?.data === 'string'
-            ? res.data.data
-            : res.data?.message || t('支付失败');
-        showError(errorMsg);
-      }
-    } catch (e) {
-      showError(t('支付请求失败'));
-    } finally {
-      setPaying(false);
-    }
-  };
-
-  const payEpay = async () => {
-    if (!selectedEpayMethod) {
-      showError(t('请选择支付方式'));
-      return;
-    }
-    setPaying(true);
-    try {
-      const res = await API.post('/api/subscription/epay/pay', {
-        plan_id: selectedPlan.plan.id,
-        payment_method: selectedEpayMethod,
-      });
-      if (res.data?.message === 'success') {
-        submitEpayForm({ url: res.data.url, params: res.data.data });
+        setAlipayPayData(res.data.data || null);
+        setAlipayOpen(true);
         showSuccess(t('已发起支付'));
         closeBuy();
       } else {
@@ -677,12 +622,8 @@ const SubscriptionPlansCard = ({
         onCancel={closeBuy}
         selectedPlan={selectedPlan}
         paying={paying}
-        selectedEpayMethod={selectedEpayMethod}
-        setSelectedEpayMethod={setSelectedEpayMethod}
-        epayMethods={epayMethods}
-        enableOnlineTopUp={enableOnlineTopUp}
-        enableStripeTopUp={enableStripeTopUp}
-        enableCreemTopUp={enableCreemTopUp}
+        enableDirectWechat={hasDirectWechat}
+        enableDirectAlipay={hasDirectAlipay}
         purchaseLimitInfo={
           selectedPlan?.plan?.id
             ? {
@@ -691,10 +632,45 @@ const SubscriptionPlansCard = ({
               }
             : null
         }
-        onPayStripe={payStripe}
-        onPayCreem={payCreem}
-        onPayEpay={payEpay}
+        onPayDirectWechat={payDirectWechat}
+        onPayDirectAlipay={payDirectAlipay}
       />
+
+      <Modal
+        title={t('微信扫码支付')}
+        visible={wechatNativeOpen}
+        onCancel={() => setWechatNativeOpen(false)}
+        footer={null}
+        centered
+        size='small'
+      >
+        <div className='flex flex-col items-center gap-4 py-2'>
+          {wechatNativePayData?.code_url && (
+            <QRCodeSVG value={wechatNativePayData.code_url} size={220} />
+          )}
+          <div className='text-center text-sm text-slate-500 dark:text-slate-400'>
+            {t('请使用微信扫码完成支付，支付成功后可在账单中查看订阅到账状态。')}
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title={t('支付宝扫码支付')}
+        visible={alipayOpen}
+        onCancel={() => setAlipayOpen(false)}
+        footer={null}
+        centered
+        size='small'
+      >
+        <div className='flex flex-col items-center gap-4 py-2'>
+          {alipayPayData?.qr_code && (
+            <QRCodeSVG value={alipayPayData.qr_code} size={220} />
+          )}
+          <div className='text-center text-sm text-slate-500 dark:text-slate-400'>
+            {t('请使用支付宝扫码完成支付，支付成功后可在账单中查看订阅到账状态。')}
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

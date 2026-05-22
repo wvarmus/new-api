@@ -75,14 +75,21 @@ const PageLayout = () => {
     '/console/topup',
     '/pricing',
     '/partners/promoter',
+    '/chat',
   ];
 
-  const shouldHideFooter = cardProPages.includes(location.pathname);
+  const isTopChatRoute =
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/');
+  const isConsoleChatRoute =
+    location.pathname === '/console/chat' ||
+    location.pathname.startsWith('/console/chat/');
+  const shouldHideFooter =
+    cardProPages.includes(location.pathname) ||
+    isTopChatRoute ||
+    isConsoleChatRoute;
 
   const shouldInnerPadding =
-    location.pathname.includes('/console') &&
-    !location.pathname.startsWith('/console/chat') &&
-    location.pathname !== '/console/playground';
+    location.pathname.includes('/console') && !isConsoleChatRoute;
 
   const isConsoleRoute = location.pathname.startsWith('/console');
   const isSidebarRoute =

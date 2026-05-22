@@ -80,7 +80,7 @@ func RequestAlipayPay(c *gin.Context) {
 		return
 	}
 
-	qrCode, err := createAlipayTradePrecreate(c.Request.Context(), tradeNo, req.Amount, payMoney)
+	qrCode, err := createAlipayTradePrecreate(c.Request.Context(), tradeNo, fmt.Sprintf("TUC%d", req.Amount), payMoney)
 	if err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("支付宝拉起支付失败 user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
 		_ = model.UpdatePendingTopUpStatus(tradeNo, model.PaymentMethodAlipayDirect, common.TopUpStatusFailed)
@@ -107,7 +107,7 @@ func newAlipayClient() (*alipayv3.ClientV3, error) {
 	return client, nil
 }
 
-func createAlipayTradePrecreate(ctx context.Context, tradeNo string, amount int64, payMoney float64) (string, error) {
+func createAlipayTradePrecreate(ctx context.Context, tradeNo string, subject string, payMoney float64) (string, error) {
 	client, err := newAlipayClient()
 	if err != nil {
 		return "", err
@@ -115,7 +115,7 @@ func createAlipayTradePrecreate(ctx context.Context, tradeNo string, amount int6
 
 	notifyURL := service.GetCallbackAddress() + "/api/user/direct-pay/alipay/notify"
 	bm := make(gopay.BodyMap)
-	bm.Set("subject", fmt.Sprintf("TUC%d", amount)).
+	bm.Set("subject", subject).
 		Set("out_trade_no", tradeNo).
 		Set("total_amount", strconv.FormatFloat(payMoney, 'f', 2, 64)).
 		Set("notify_url", notifyURL)
@@ -174,6 +174,23 @@ func AlipayNotify(c *gin.Context) {
 
 	LockOrder(tradeNo)
 	defer UnlockOrder(tradeNo)
+	if model.GetSubscriptionOrderByTradeNo(tradeNo) != nil {
+		paid, err := decimal.NewFromString(totalAmount)
+		if err != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("支付宝订阅支付金额格式错误 trade_no=%s total_amount=%s client_ip=%s", tradeNo, totalAmount, c.ClientIP()))
+			return
+		}
+		paidCents := paid.Mul(decimal.NewFromInt(100)).Round(0).IntPart()
+		if err := completeDirectPaySubscriptionOrder(tradeNo, paidCents, common.GetJsonString(bm), model.PaymentMethodAlipayDirect); err != nil {
+			if errors.Is(err, model.ErrSubscriptionOrderStatusInvalid) {
+				return
+			}
+			logger.LogError(c.Request.Context(), fmt.Sprintf("支付宝订阅完成失败 trade_no=%s client_ip=%s error=%q", tradeNo, c.ClientIP(), err.Error()))
+			return
+		}
+		service.EmitPromotionSubscriptionPaid(model.GetTopUpByTradeNo(tradeNo), "CNY")
+		return
+	}
 	if err := model.RechargeAlipayDirect(tradeNo, totalAmount, c.ClientIP()); err != nil {
 		if strings.Contains(err.Error(), "状态错误") {
 			return

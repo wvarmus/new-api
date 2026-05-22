@@ -29,7 +29,6 @@ export function setStatusData(data) {
   localStorage.setItem('enable_drawing', data.enable_drawing);
   localStorage.setItem('enable_task', data.enable_task);
   localStorage.setItem('enable_data_export', data.enable_data_export);
-  localStorage.setItem('chats', JSON.stringify(data.chats));
   localStorage.setItem(
     'data_export_default_time',
     data.data_export_default_time,
@@ -39,16 +38,6 @@ export function setStatusData(data) {
     data.default_collapse_sidebar,
   );
   localStorage.setItem('mj_notify_enabled', data.mj_notify_enabled);
-  if (data.chat_link) {
-    // localStorage.setItem('chat_link', data.chat_link);
-  } else {
-    localStorage.removeItem('chat_link');
-  }
-  if (data.chat_link2) {
-    // localStorage.setItem('chat_link2', data.chat_link2);
-  } else {
-    localStorage.removeItem('chat_link2');
-  }
   if (data.docs_link) {
     localStorage.setItem('docs_link', data.docs_link);
   } else {

@@ -50,6 +50,7 @@ export function redirectAfterAuth(
   const returnTo = getAllowedReturnTo(search) || getPersistedAllowedReturnTo();
 
   if (returnTo) {
+    clearPersistedReturnTo();
     navigate(returnTo, { replace: true });
     return;
   }

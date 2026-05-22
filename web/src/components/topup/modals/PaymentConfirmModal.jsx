@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Modal, Typography, Card, Skeleton } from '@douyinfe/semi-ui';
-import { SiAlipay, SiWechat, SiStripe } from 'react-icons/si';
+import { SiAlipay, SiWechat } from 'react-icons/si';
 import { CreditCard } from 'lucide-react';
 
 const { Text } = Typography;
@@ -136,12 +136,6 @@ const PaymentConfirmModal = ({
                             size={16}
                             color='#07C160'
                           />
-                        ) : payMethod.type === 'stripe' ? (
-                          <SiStripe
-                            className='mr-2'
-                            size={16}
-                            color='#635BFF'
-                          />
                         ) : payMethod.icon ? (
                           <img
                             src={payMethod.icon}
@@ -179,19 +173,6 @@ const PaymentConfirmModal = ({
                           />
                           <Text className='text-slate-900 dark:text-slate-100'>
                             {t('支付宝')}
-                          </Text>
-                        </>
-                      );
-                    } else if (payWay === 'stripe') {
-                      return (
-                        <>
-                          <SiStripe
-                            className='mr-2'
-                            size={16}
-                            color='#635BFF'
-                          />
-                          <Text className='text-slate-900 dark:text-slate-100'>
-                            Stripe
                           </Text>
                         </>
                       );
