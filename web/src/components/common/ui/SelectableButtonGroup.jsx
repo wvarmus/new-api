@@ -154,10 +154,9 @@ const SelectableButtonGroup = ({
               }}
             >
               {withCheckbox && (
-                <Skeleton.Title active style={{ width: 14, height: 14 }} />
+                <Skeleton.Title style={{ width: 14, height: 14 }} />
               )}
               <Skeleton.Title
-                active
                 style={{
                   width: `${60 + (index % 3) * 20}px`,
                   height: 14,
@@ -169,9 +168,7 @@ const SelectableButtonGroup = ({
       </Row>
     );
 
-    return (
-      <Skeleton loading={true} active placeholder={placeholder}></Skeleton>
-    );
+    return <Skeleton loading={true} placeholder={placeholder}></Skeleton>;
   };
 
   const contentElement = showSkeleton ? (
@@ -206,7 +203,9 @@ const SelectableButtonGroup = ({
                   {item.icon && <span className='sbg-icon'>{item.icon}</span>}
                   <ConditionalTooltipText text={item.label} />
                   {item.tagCount !== undefined && shouldShowTags && (
-                    <span className={`sbg-badge ${isActive ? 'sbg-badge-active' : ''}`}>
+                    <span
+                      className={`sbg-badge ${isActive ? 'sbg-badge-active' : ''}`}
+                    >
                       {item.tagCount}
                     </span>
                   )}
@@ -228,11 +227,15 @@ const SelectableButtonGroup = ({
               <div className='sbg-content'>
                 {item.icon && <span className='sbg-icon'>{item.icon}</span>}
                 <ConditionalTooltipText text={item.label} />
-                {item.tagCount !== undefined && shouldShowTags && item.tagCount !== '' && (
-                  <span className={`sbg-badge ${isActive ? 'sbg-badge-active' : ''}`}>
-                    {item.tagCount}
-                  </span>
-                )}
+                {item.tagCount !== undefined &&
+                  shouldShowTags &&
+                  item.tagCount !== '' && (
+                    <span
+                      className={`sbg-badge ${isActive ? 'sbg-badge-active' : ''}`}
+                    >
+                      {item.tagCount}
+                    </span>
+                  )}
               </div>
             </Button>
           </Col>
@@ -249,7 +252,7 @@ const SelectableButtonGroup = ({
       {title && (
         <Divider margin='12px' align='left'>
           {showSkeleton ? (
-            <Skeleton.Title active style={{ width: 80, height: 14 }} />
+            <Skeleton.Title style={{ width: 80, height: 14 }} />
           ) : (
             title
           )}

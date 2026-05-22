@@ -31,11 +31,11 @@ import { Modal, Toast } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
-import { QRCodeSVG } from 'qrcode.react';
 
 import RechargeCard from './RechargeCard';
 import PaymentConfirmModal from './modals/PaymentConfirmModal';
-import TopupHistoryModal from './modals/TopupHistoryModal';
+import TopupHistoryCard from './TopupHistoryCard';
+import DirectPayQrModal from './modals/DirectPayQrModal';
 
 const TopUp = () => {
   const { t } = useTranslation();
@@ -77,11 +77,7 @@ const TopUp = () => {
 
   // 微信支付 Native 相关状态
   const [enableWechatNativeTopUp, setEnableWechatNativeTopUp] = useState(false);
-  const [wechatNativeOpen, setWechatNativeOpen] = useState(false);
-  const [wechatNativePayData, setWechatNativePayData] = useState(null);
   const [enableAlipayTopUp, setEnableAlipayTopUp] = useState(false);
-  const [alipayOpen, setAlipayOpen] = useState(false);
-  const [alipayPayData, setAlipayPayData] = useState(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -90,9 +86,11 @@ const TopUp = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [payMethods, setPayMethods] = useState([]);
+  const [directPayOpen, setDirectPayOpen] = useState(false);
+  const [directPayData, setDirectPayData] = useState(null);
+  const [directPayChecking, setDirectPayChecking] = useState(false);
 
-  // 账单Modal状态
-  const [openHistory, setOpenHistory] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   // 订阅相关
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
@@ -124,6 +122,14 @@ const TopUp = () => {
 
   const getPayMethodConfig = (payment) =>
     confirmPayMethods.find((method) => method.type === payment);
+
+  const isDirectPayMethod = (payment) =>
+    payment === 'direct_wechat_native' || payment === 'direct_alipay';
+
+  const getDirectPayEndpoint = (payment) =>
+    payment === 'direct_wechat_native'
+      ? '/api/user/direct-pay/wechat-native/pay'
+      : '/api/user/direct-pay/alipay/pay';
 
   const getPaymentMinTopUp = (payment) => {
     const configuredMinTopUp = Number(getPayMethodConfig(payment)?.min_topup);
@@ -170,6 +176,7 @@ const TopUp = () => {
           };
           userDispatch({ type: 'login', payload: updatedUser });
         }
+        setHistoryRefreshKey((value) => value + 1);
         setRedemptionCode('');
       } else {
         showError(message);
@@ -232,11 +239,89 @@ const TopUp = () => {
         showError(t('充值数量不能小于') + selectedMinTopUp);
         return;
       }
+      if (isDirectPayMethod(payment)) {
+        await requestDirectPay(payment);
+        return;
+      }
       setOpen(true);
     } catch (error) {
       showError(t('获取金额失败'));
     } finally {
       setPaymentLoading(false);
+    }
+  };
+
+  const requestDirectPay = async (payment) => {
+    setDirectPayData(null);
+    setDirectPayOpen(false);
+    try {
+      const res = await API.post(getDirectPayEndpoint(payment), {
+        amount: parseInt(topUpCount),
+      });
+      if (res !== undefined) {
+        const { message, data } = res.data;
+        if (message === 'success') {
+          setDirectPayData({
+            ...(data || {}),
+            payWay: payment,
+          });
+          setDirectPayOpen(true);
+        } else {
+          const errorMsg =
+            typeof data === 'string' ? data : message || t('支付请求失败');
+          showError(errorMsg);
+        }
+      } else {
+        showError(res);
+      }
+    } catch (err) {
+      showError(t('支付请求失败'));
+    }
+  };
+
+  const closeDirectPayModal = () => {
+    if (directPayChecking) return;
+    setDirectPayOpen(false);
+    setDirectPayData(null);
+  };
+
+  const checkDirectPayStatus = async () => {
+    const tradeNo = directPayData?.trade_no;
+    if (!tradeNo) {
+      showError(t('未支付'));
+      return;
+    }
+
+    setDirectPayChecking(true);
+    try {
+      const res = await API.get(
+        `/api/user/topup/self?p=1&page_size=1&keyword=${encodeURIComponent(
+          tradeNo,
+        )}`,
+      );
+      const { success, message, data } = res.data;
+      if (!success) {
+        showError(message || t('查询支付状态失败'));
+        return;
+      }
+
+      const record = (data?.items || []).find(
+        (item) => item.trade_no === tradeNo,
+      );
+      if (record?.status === 'success') {
+        showSuccess(t('支付成功'));
+        setDirectPayOpen(false);
+        setDirectPayData(null);
+        setHistoryRefreshKey((value) => value + 1);
+        await getUserQuota();
+        return;
+      }
+
+      showError(t('未支付'));
+    } catch (err) {
+      showError(t('查询支付状态失败'));
+    } finally {
+      setDirectPayChecking(false);
     }
   };
 
@@ -264,18 +349,28 @@ const TopUp = () => {
       return;
     }
 
+    if (isDirectPayMethod(payWay)) {
+      if (amount === 0) {
+        await getAmount();
+      }
+      if (topUpCount < getPaymentMinTopUp(payWay)) {
+        showError(t('充值数量不能小于') + getPaymentMinTopUp(payWay));
+        return;
+      }
+      setConfirmLoading(true);
+      try {
+        await requestDirectPay(payWay);
+      } finally {
+        setOpen(false);
+        setConfirmLoading(false);
+      }
+      return;
+    }
+
     if (payWay === 'stripe') {
       // Stripe 支付处理
       if (amount === 0) {
         await getStripeAmount();
-      }
-    } else if (payWay === 'direct_wechat_native') {
-      if (amount === 0) {
-        await getAmount();
-      }
-    } else if (payWay === 'direct_alipay') {
-      if (amount === 0) {
-        await getAmount();
       }
     } else {
       // 普通支付处理
@@ -297,14 +392,6 @@ const TopUp = () => {
           amount: parseInt(topUpCount),
           payment_method: 'stripe',
         });
-      } else if (payWay === 'direct_wechat_native') {
-        res = await API.post('/api/user/direct-pay/wechat-native/pay', {
-          amount: parseInt(topUpCount),
-        });
-      } else if (payWay === 'direct_alipay') {
-        res = await API.post('/api/user/direct-pay/alipay/pay', {
-          amount: parseInt(topUpCount),
-        });
       } else {
         // 普通支付请求
         res = await API.post('/api/user/pay', {
@@ -319,12 +406,6 @@ const TopUp = () => {
           if (payWay === 'stripe') {
             // Stripe 支付回调处理
             window.open(data.pay_link, '_blank');
-          } else if (payWay === 'direct_wechat_native') {
-            setWechatNativePayData(data);
-            setWechatNativeOpen(true);
-          } else if (payWay === 'direct_alipay') {
-            setAlipayPayData(data);
-            setAlipayOpen(true);
           } else {
             // 普通支付表单提交
             let params = data;
@@ -727,7 +808,7 @@ const TopUp = () => {
         if (data.amount_options && data.amount_options.length > 0) {
           const customPresets = data.amount_options.map((amount) => ({
             value: amount,
-            discount: data.discount[amount] || 1.0,
+            discount: data.discount?.[amount] || 1.0,
           }));
           setPresetAmounts(customPresets);
         }
@@ -739,10 +820,10 @@ const TopUp = () => {
     }
   };
 
-  // URL 参数自动打开账单弹窗（支付回跳时触发）
+  // URL 参数自动刷新账单（支付回跳时触发）
   useEffect(() => {
     if (searchParams.get('show_history') === 'true') {
-      setOpenHistory(true);
+      setHistoryRefreshKey((value) => value + 1);
       searchParams.delete('show_history');
       setSearchParams(searchParams, { replace: true });
     }
@@ -833,28 +914,17 @@ const TopUp = () => {
     setOpen(false);
   };
 
-  const handleOpenHistory = () => {
-    setOpenHistory(true);
-  };
-
-  const handleHistoryCancel = () => {
-    setOpenHistory(false);
-  };
-
   const handleCreemCancel = () => {
     setCreemOpen(false);
     setSelectedCreemProduct(null);
   };
 
   // 选择预设充值额度
-  const selectPresetAmount = (preset) => {
+  const selectPresetAmount = async (preset) => {
     setTopUpCount(preset.value);
     setSelectedPreset(preset.value);
 
-    // 计算实际支付金额，考虑折扣
-    const discount = preset.discount || topupInfo.discount[preset.value] || 1.0;
-    const discountedAmount = preset.value * priceRatio * discount;
-    setAmount(discountedAmount);
+    await getAmount(preset.value);
   };
 
   // 格式化大数字显示
@@ -871,7 +941,7 @@ const TopUp = () => {
   };
 
   return (
-    <div className='w-full max-w-7xl mx-auto relative min-h-screen lg:min-h-0 header-offset-top px-2'>
+    <div className='wallet-page-container w-full relative header-offset-top'>
       {/* 充值确认模态框 */}
       <PaymentConfirmModal
         t={t}
@@ -889,52 +959,19 @@ const TopUp = () => {
         discountRate={topupInfo?.discount?.[topUpCount] || 1.0}
       />
 
-      {/* 充值账单模态框 */}
-      <TopupHistoryModal
-        visible={openHistory}
-        onCancel={handleHistoryCancel}
+      <DirectPayQrModal
         t={t}
+        open={directPayOpen}
+        onCancel={closeDirectPayModal}
+        onCheckPaid={checkDirectPayStatus}
+        checking={directPayChecking}
+        payData={directPayData}
+        topUpCount={topUpCount}
+        renderQuotaWithAmount={renderQuotaWithAmount}
+        amountLoading={amountLoading}
+        renderAmount={renderAmount}
+        payMethods={confirmPayMethods}
       />
-
-      <Modal
-        title={t('微信扫码支付')}
-        visible={wechatNativeOpen}
-        onCancel={() => setWechatNativeOpen(false)}
-        footer={null}
-        centered
-        size='small'
-      >
-        <div className='flex flex-col items-center gap-4 py-2'>
-          {wechatNativePayData?.code_url && (
-            <QRCodeSVG value={wechatNativePayData.code_url} size={220} />
-          )}
-          <div className='text-center text-sm text-slate-500 dark:text-slate-400'>
-            {t(
-              '请使用微信扫码完成支付，支付成功后可在充值记录中查看到账状态。',
-            )}
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        title={t('支付宝扫码支付')}
-        visible={alipayOpen}
-        onCancel={() => setAlipayOpen(false)}
-        footer={null}
-        centered
-        size='small'
-      >
-        <div className='flex flex-col items-center gap-4 py-2'>
-          {alipayPayData?.qr_code && (
-            <QRCodeSVG value={alipayPayData.qr_code} size={220} />
-          )}
-          <div className='text-center text-sm text-slate-500 dark:text-slate-400'>
-            {t(
-              '请使用支付宝扫码完成支付，支付成功后可在充值记录中查看到账状态。',
-            )}
-          </div>
-        </div>
-      </Modal>
 
       {/* Creem 充值确认模态框 */}
       <Modal
@@ -965,7 +1002,7 @@ const TopUp = () => {
       </Modal>
 
       {/* 主布局区域 */}
-      <div className='grid grid-cols-1 gap-6'>
+      <div className='wallet-page-main grid grid-cols-1 gap-6'>
         <RechargeCard
           t={t}
           enableOnlineTopUp={enableOnlineTopUp}
@@ -986,14 +1023,16 @@ const TopUp = () => {
           minTopUp={minTopUp}
           renderQuotaWithAmount={renderQuotaWithAmount}
           getAmount={getAmount}
+          requestAmountByPayment={requestAmountByPayment}
           setTopUpCount={setTopUpCount}
           setSelectedPreset={setSelectedPreset}
           renderAmount={renderAmount}
           amountLoading={amountLoading}
+          paymentLoading={paymentLoading}
           payMethods={confirmPayMethods}
           preTopUp={preTopUp}
-          paymentLoading={paymentLoading}
           payWay={payWay}
+          setPayWay={setPayWay}
           redemptionCode={redemptionCode}
           setRedemptionCode={setRedemptionCode}
           topUp={topUp}
@@ -1003,15 +1042,9 @@ const TopUp = () => {
           userState={userState}
           renderQuota={renderQuota}
           statusLoading={statusLoading}
-          topupInfo={topupInfo}
-          onOpenHistory={handleOpenHistory}
-          subscriptionLoading={subscriptionLoading}
-          subscriptionPlans={subscriptionPlans}
-          billingPreference={billingPreference}
-          onChangeBillingPreference={updateBillingPreference}
-          activeSubscriptions={activeSubscriptions}
-          allSubscriptions={allSubscriptions}
-          reloadSubscriptionSelf={getSubscriptionSelf}
+          historySlot={
+            <TopupHistoryCard t={t} refreshKey={historyRefreshKey} />
+          }
         />
       </div>
     </div>
