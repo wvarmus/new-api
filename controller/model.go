@@ -3,7 +3,9 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -28,6 +30,67 @@ import (
 var openAIModels []dto.OpenAIModels
 var openAIModelsMap map[string]dto.OpenAIModels
 var channelId2Models map[int][]string
+
+const lobeStaticSVGBaseURL = "https://registry.npmmirror.com/@lobehub/icons-static-svg/latest/files/icons"
+
+var lobeIconVariantSuffixes = map[string]string{
+	"Color":      "-color",
+	"Brand":      "-brand",
+	"BrandColor": "-brand-color",
+	"Text":       "-text",
+	"TextCn":     "-text-cn",
+	"TextColor":  "-text-color",
+	"Avatar":     "-color",
+}
+
+func lobeIconStaticSVGURL(icon string) string {
+	icon = strings.TrimSpace(icon)
+	if icon == "" {
+		return ""
+	}
+	iconLower := strings.ToLower(icon)
+	if strings.HasPrefix(iconLower, "http://") || strings.HasPrefix(iconLower, "https://") || strings.HasPrefix(iconLower, "data:image") || strings.HasPrefix(icon, "/") {
+		return icon
+	}
+
+	segments := strings.Split(icon, ".")
+	base := strings.Builder{}
+	for _, r := range segments[0] {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			base.WriteRune(unicode.ToLower(r))
+		}
+	}
+	if base.Len() == 0 {
+		return ""
+	}
+
+	suffix := ""
+	for _, segment := range segments[1:] {
+		if variantSuffix, ok := lobeIconVariantSuffixes[segment]; ok {
+			suffix = variantSuffix
+			break
+		}
+	}
+
+	return fmt.Sprintf("%s/%s%s.svg", lobeStaticSVGBaseURL, base.String(), suffix)
+}
+
+func enrichOpenAIModelProviders(aiModels []dto.OpenAIModels) {
+	modelNames := make([]string, 0, len(aiModels))
+	for _, aiModel := range aiModels {
+		modelNames = append(modelNames, aiModel.Id)
+	}
+
+	metadata := model.GetModelDisplayMetadata(modelNames)
+	for i := range aiModels {
+		if item, ok := metadata[aiModels[i].Id]; ok {
+			aiModels[i].Provider = item.Provider
+			aiModels[i].Icon = item.Icon
+			aiModels[i].ProviderIcon = item.ProviderIcon
+			aiModels[i].IconURL = lobeIconStaticSVGURL(item.Icon)
+		}
+	}
+}
 
 func init() {
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
@@ -202,6 +265,8 @@ func ListModels(c *gin.Context, modelType int) {
 		}
 	}
 
+	enrichOpenAIModelProviders(userOpenAiModels)
+
 	switch modelType {
 	case constant.ChannelTypeAnthropic:
 		useranthropicModels := make([]dto.AnthropicModel, len(userOpenAiModels))
@@ -264,6 +329,13 @@ func EnabledListModels(c *gin.Context) {
 func RetrieveModel(c *gin.Context, modelType int) {
 	modelId := c.Param("model")
 	if aiModel, ok := openAIModelsMap[modelId]; ok {
+		if metadata := model.GetModelDisplayMetadata([]string{aiModel.Id}); metadata[aiModel.Id].Provider != "" || metadata[aiModel.Id].Icon != "" {
+			item := metadata[aiModel.Id]
+			aiModel.Provider = item.Provider
+			aiModel.Icon = item.Icon
+			aiModel.ProviderIcon = item.ProviderIcon
+			aiModel.IconURL = lobeIconStaticSVGURL(item.Icon)
+		}
 		switch modelType {
 		case constant.ChannelTypeAnthropic:
 			c.JSON(200, dto.AnthropicModel{
