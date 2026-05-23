@@ -89,23 +89,39 @@ const getChatIdFromPath = (path) => {
   return match?.[1] ? decodeURIComponent(match[1]) : '';
 };
 
-const Chat = () => {
+const Chat = ({ active = true }) => {
   const iframeRef = useRef(null);
+  const lastChatRouteRef = useRef({
+    chatBasePath: '/chat',
+    openWebUIPath: '/',
+  });
   const actualTheme = useActualTheme();
   const [statusState] = useContext(StatusContext);
   const { i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const isTopChatRoute =
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/');
   const isConsoleChatRoute =
     location.pathname === '/console/chat' ||
     location.pathname.startsWith('/console/chat/');
-  const chatBasePath = isConsoleChatRoute ? '/console/chat' : '/chat';
-  const chatId = getChatIdFromPath(location.pathname);
+  const isChatRoute = isTopChatRoute || isConsoleChatRoute;
+  const routeSyncActive = active && isChatRoute;
+  const currentChatBasePath = isConsoleChatRoute ? '/console/chat' : '/chat';
+  const chatId = routeSyncActive ? getChatIdFromPath(location.pathname) : '';
+  const currentOpenWebUIPath = routeSyncActive
+    ? getOpenWebUIPath(chatId, location.search)
+    : '';
+  const chatBasePath = routeSyncActive
+    ? currentChatBasePath
+    : lastChatRouteRef.current.chatBasePath;
+  const openWebUIPath = routeSyncActive
+    ? currentOpenWebUIPath
+    : lastChatRouteRef.current.openWebUIPath;
   const openWebUIURL = getConfiguredOpenWebUIURL(statusState?.status);
   const openWebUIEnabled = openWebUIURL !== '';
   const openWebUIOrigin = getOpenWebUIOrigin(openWebUIURL);
   const messageOriginRef = useRef(openWebUIOrigin);
-  const openWebUIPath = getOpenWebUIPath(chatId, location.search);
   const openWebUISrc = openWebUIEnabled
     ? getOpenWebUIURL(openWebUIURL, openWebUIPath)
     : '';
@@ -117,6 +133,14 @@ const Chat = () => {
   const [iframeReady, setIframeReady] = useState(false);
   const [openWebUILoaded, setOpenWebUILoaded] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!routeSyncActive) return;
+    lastChatRouteRef.current = {
+      chatBasePath: currentChatBasePath,
+      openWebUIPath: currentOpenWebUIPath,
+    };
+  }, [routeSyncActive, currentChatBasePath, currentOpenWebUIPath]);
 
   useEffect(() => {
     if (openWebUIURLRef.current === openWebUIURL) return;
@@ -203,6 +227,8 @@ const Chat = () => {
     force = false,
     targetOrigin = messageOriginRef.current,
   ) => {
+    if (!routeSyncActive) return;
+
     const targetWindow = iframeRef.current?.contentWindow;
     if (!targetWindow || (!force && (!iframeLoaded || !iframeReady))) {
       return;
@@ -263,6 +289,8 @@ const Chat = () => {
       }
 
       if (event.data?.type === 'new-api:route') {
+        if (!routeSyncActive) return;
+
         const nextPath = getNewAPIChatPath(event.data.path, chatBasePath);
         if (nextPath !== location.pathname) {
           navigate(nextPath, { replace: true });
@@ -289,6 +317,7 @@ const Chat = () => {
     openWebUIPath,
     location.pathname,
     chatBasePath,
+    routeSyncActive,
     navigate,
   ]);
 
@@ -329,8 +358,9 @@ const Chat = () => {
   }, [i18n, actualTheme, iframeLoaded]);
 
   useEffect(() => {
+    if (!routeSyncActive) return;
     sendNavigationMessage();
-  }, [openWebUIPath, iframeLoaded, iframeReady]);
+  }, [routeSyncActive, openWebUIPath, iframeLoaded, iframeReady]);
 
   return (
     <main

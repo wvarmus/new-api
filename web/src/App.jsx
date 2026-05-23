@@ -78,7 +78,7 @@ function ChatKeepAlive({ active, loggedIn }) {
   return (
     <div style={{ display: active ? 'block' : 'none' }} aria-hidden={!active}>
       <Suspense fallback={active ? <Loading /> : null}>
-        <Chat />
+        <Chat active={active} />
       </Suspense>
     </div>
   );
