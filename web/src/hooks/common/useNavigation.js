@@ -57,11 +57,6 @@ export const useNavigation = (
         itemKey: 'pricing',
         to: '/pricing',
       },
-      {
-        text: t('对话'),
-        itemKey: 'chat',
-        to: '/chat',
-      },
       ...(docsLink
         ? [
             {
@@ -72,6 +67,11 @@ export const useNavigation = (
             },
           ]
         : []),
+      {
+        text: t('对话'),
+        itemKey: 'chat',
+        to: '/chat',
+      },
       {
         text: t('推广入口'),
         itemKey: 'partners',

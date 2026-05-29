@@ -17,49 +17,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Building2,
-  Coins,
-  Lock,
-  Receipt,
+  ArrowRight,
+  Boxes,
+  CheckCircle2,
+  Code2,
+  FileSearch,
+  Gauge,
+  MessageSquareText,
+  Network,
   ShieldCheck,
-  Zap,
+  Sparkles,
+  WalletCards,
+  X,
+  ZoomIn,
 } from 'lucide-react';
-import { promiseItems, shouldRenderDefaultHomePage } from './homeSections';
-
-const homeText = {
-  badge:
-    '\u65e0\u9650\u661f\u6cb3AI \u00b7 \u8ba9\u521b\u9020\u66f4\u7b80\u5355',
-  titleHtml: 'hero-title',
-  subtitle:
-    '\u4ef7\u683c\u900f\u660e\u53ef\u67e5\uff0c\u7ebf\u8def\u6301\u7eed\u6838\u9a8c\uff1b\u4e2a\u4eba\u7528\u6237\u3001\u5f00\u53d1\u8005\u4e0e\u4f01\u4e1a\u5ba2\u6237\u90fd\u80fd\u5feb\u901f\u63a5\u5165\u3002',
-  primaryCta: '\u7acb\u5373\u5f00\u59cb',
-  primaryConsole: '\u8fdb\u5165\u63a7\u5236\u53f0',
-  pricingCta: '\u67e5\u770b\u4ef7\u683c',
-  baseUrlTitle:
-    '\u4e00\u952e\u590d\u5236\u53ef\u76f4\u63a5\u63a5\u5165\u7684\u57fa\u7840\u5730\u5740',
-  copyBaseUrl: '\u590d\u5236\u5730\u5740',
-  modelsTitle:
-    '\u4f60\u8981\u7684\u6a21\u578b\uff0c\u8fd9\u91cc\u5168\u90fd\u6709',
-  modelsSubtitle:
-    '\u8986\u76d6\u5168\u90e8\u4e3b\u6d41\u6a21\u578b\uff0c\u9996\u53d1\u540c\u6b65\u6700\u65b0\u7248\u672c\u3002',
-  ctaTitle:
-    '\u4e00\u4e2a\u8ba4\u771f\u505a\u670d\u52a1\u7684\u5e73\u53f0\u3002',
-  ctaDesc:
-    '\u6ca1\u6709\u82b1\u91cc\u80e1\u54e8\u7684\u5671\u5934\uff0c\u6ca1\u6709\u6587\u5b57\u6e38\u620f\u3002\u53ea\u628a\u6a21\u578b\u771f\u5b9e\u3001\u4ef7\u683c\u900f\u660e\u3001\u4f01\u4e1a\u53ef\u7528\u505a\u5230\u4f4d\u3002',
-  ctaButton: '\u7acb\u5373\u5f00\u59cb\u6ce8\u518c',
-  footerBrand: '\u65e0\u9650\u661f\u6cb3 AI',
-  footerDesc:
-    '\u8ba9\u9876\u5c16 AI \u6a21\u578b\uff0c\u4ee5\u66f4\u900f\u660e\u3001\u53ef\u4fe1\u3001\u4f4e\u6210\u672c\u7684\u65b9\u5f0f\u670d\u52a1\u6bcf\u4e00\u4f4d AI \u7528\u6237\u3002',
-  footerTitle: '\u4ea7\u54c1\u4e0e\u6587\u6863',
-  footerModels: '\u6a21\u578b\u8986\u76d6\u77e9\u9635',
-  footerDocs: '\u6587\u6863',
-  footerCopy: 'footer-copy',
-  footerVersion:
-    '\u5f53\u524d\u7248\u672c v2026.04 \u00b7 \u6700\u540e\u66f4\u65b0 2026-04-14',
-};
+import { shouldRenderDefaultHomePage } from './homeSections';
 
 const homepageLogo = '/logo.png';
 
@@ -70,16 +45,16 @@ const modelLogoRows = [
     { key: 'gemini', name: 'Gemini', file: 'Gemini.svg', featured: true },
     { key: 'deepseek', name: 'DeepSeek', file: 'DeepSeek.svg' },
     { key: 'qwen', name: 'Qwen', file: 'Qwen.svg' },
-    { key: 'zhipu', name: 'Zhipu', file: 'Zhipu.svg' },
+    { key: 'zhipu', name: 'GLM', file: 'Zhipu.svg' },
     { key: 'hunyuan', name: 'Hunyuan', file: 'Hunyuan.svg' },
   ],
   [
+    { key: 'moonshot', name: 'Kimi', file: 'MoonshotAI.svg' },
     { key: 'midjourney', name: 'Midjourney', file: 'Midjourney.svg' },
-    { key: 'moonshot', name: 'MoonshotAI', file: 'MoonshotAI.svg' },
     { key: 'volcengine', name: 'Volcengine', file: 'Volcengine.svg' },
     { key: 'wenxin', name: 'Wenxin', file: 'Wenxin.svg' },
     { key: 'grok', name: 'Grok', file: 'Grok_2.svg' },
-    { key: 'more', name: '\u66f4\u591a\u6a21\u578b', count: '30+' },
+    { key: 'more', name: '更多模型', count: '30+' },
   ],
 ];
 
@@ -94,6 +69,150 @@ const darkModelLogoFiles = new Set([
   'MoonshotAI.svg',
   'OpenAI.svg',
 ]);
+
+const heroTags = [
+  '自建源头号池',
+  '模型验真报告',
+  '价格直观展示',
+  '缓存真实有效',
+  '多线路冗余安全',
+];
+
+const trustCards = [
+  {
+    key: 'verify',
+    icon: ShieldCheck,
+    title: '先验真，再上架',
+    desc: '主力模型不只看能否返回答案，会结合身份、能力、协议表现和具体模型匹配做检查。',
+  },
+  {
+    key: 'pricing',
+    icon: WalletCards,
+    title: '分组直接标价格',
+    desc: '输入、输出、缓存读取和缓存创建价格分开展示，按量付费更容易看懂真实成本。',
+    highlight: '按量付费 · 统一余额',
+  },
+  {
+    key: 'cache',
+    icon: Gauge,
+    title: '缓存成本单独说明',
+    desc: '长上下文、代码库和多轮任务会反复读取内容，缓存价格直接影响真实成本。',
+  },
+  {
+    key: 'routes',
+    icon: Network,
+    title: '自建号池与多线路冗余',
+    desc: '自建号池覆盖的场景里，平台自己掌握供给源头，并通过多线路观察、退出和补位降低单点风险。',
+    highlight: '自有源头 · 多线路补位',
+  },
+];
+
+const chatFeatures = [
+  { icon: MessageSquareText, title: '多模型无感切换' },
+  { icon: Boxes, title: '多模型对比' },
+  { icon: FileSearch, title: '文件与图片输入' },
+  { icon: Code2, title: '工具与代码能力' },
+];
+
+const groupCards = [
+  {
+    key: 'standard',
+    eyebrow: '通用标准',
+    title: '日常使用先从这里开始',
+    desc: '适合问答、写作、资料整理、学习和轻量代码辅助，价格更友好。',
+    action: '查看支持模型',
+  },
+  {
+    key: 'business',
+    eyebrow: '通用企业',
+    title: '团队和高频任务优先',
+    desc: '更重视模型一致性、自有供给承接、缓存命中、业务连续性和运行可观察性。',
+    action: '查看企业分组',
+  },
+  {
+    key: 'domestic',
+    eyebrow: '国产精选',
+    title: '国产主流模型统一入口',
+    desc: '覆盖 Qwen、DeepSeek、Kimi、GLM、MiniMax 等模型组合，适合中文任务和批量处理。',
+    action: '查看国产模型',
+  },
+  {
+    key: 'brand',
+    eyebrow: '品牌分组',
+    title: '按 Claude / GPT / Gemini 选择',
+    desc: '适合明确知道模型品牌的用户，在品牌下选择标准或企业线路。',
+    action: '查看品牌模型',
+  },
+];
+
+const samplePriceTags = [
+  '示例分组',
+  '工具调用',
+  '文件理解',
+  '图像理解',
+  '上下文 1M',
+];
+
+const samplePriceItems = [
+  { label: '输入价格/M', value: '$3.0000' },
+  { label: '输出价格/M', value: '$12.0000' },
+  { label: '缓存读取/M', value: '$0.7500' },
+  { label: '缓存创建/M', value: '$3.7500' },
+];
+
+const priceBenefitItems = ['按量付费', '统一余额', '一次充值用所有可用模型'];
+
+const verificationReports = [
+  {
+    key: 'gpt-55',
+    title: 'GPT 5.5',
+    subtitle: '100% 完美匹配',
+    src: '/home-verification/report-gpt-55.png',
+  },
+  {
+    key: 'gemini-31-pro',
+    title: 'Gemini 3.1 Pro',
+    subtitle: '模型家族与协议一致性通过',
+    src: '/home-verification/report-gemini-31-pro.png',
+  },
+  {
+    key: 'gpt-54',
+    title: 'GPT 5.4',
+    subtitle: '知识问答与型号特征通过',
+    src: '/home-verification/report-gpt-54.png',
+  },
+];
+
+const standardRows = [
+  '模型/能力可信',
+  '调用表现观察',
+  '价格与缓存成本',
+  '自建号池源头能力',
+  '异常退出与补位',
+];
+
+const faqs = [
+  {
+    question: '我是新手，应该选哪个？',
+    answer:
+      '建议先从通用标准开始；不会接 API 的用户可以先用聚合对话站，确认模型效果后再接入自己的工具。',
+  },
+  {
+    question: '标准分组是不是低质量？',
+    answer:
+      '不是。标准分组定位是价格更友好、适合日常使用，仍然需要保留模型真实性、基础可用性和价格透明检查。',
+  },
+  {
+    question: '为什么缓存价格重要？',
+    answer:
+      '长文档、代码库和多轮任务会反复读取上下文，缓存读取价和命中情况会直接影响真实成本。',
+  },
+  {
+    question: '你们怎么避免假模型？',
+    answer:
+      '平台会结合模型身份、具体模型匹配、能力结果和协议表现判断，不把“能回答”直接等同于“真模型”。',
+  },
+];
 
 const getDarkModelLogoFile = (file) => {
   if (!file || !darkModelLogoFiles.has(file)) {
@@ -126,152 +245,136 @@ const ModelLogoImage = ({ item, className }) => {
   );
 };
 
-const trustCards = [
-  {
-    key: 'calls',
-    titleKey: '百万亿级调用规模',
-    descKey: '稳定承载高并发调用，峰值场景下也能保持流畅返回。',
-  },
-  {
-    key: 'builders',
-    titleKey: '30W+ 用户信任',
-    descKey: '持续服务个人创作者、开发者与企业用户，口碑沉淀更真实。',
-  },
-  {
-    key: 'invoice',
-    titleKey: '增值税专用发票',
-    descKey: '支持规范开票与企业对公流程，采购、报销与财务处理更省事。',
-  },
-  {
-    key: 'compliance',
-    titleKey: 'ICP备案 / EDI许可',
-    descKey: '面向企业接入更友好，便于采购评估、合作推进与内部合规流转。',
-  },
-];
+const SectionIntro = ({
+  eyebrow,
+  title,
+  desc,
+  align = 'left',
+  titleClassName = '',
+}) => (
+  <div
+    className={`home-section-intro ${
+      align === 'center' ? 'home-section-intro-center' : ''
+    }`}
+  >
+    <h2
+      className={`${eyebrow ? 'home-section-title-inline' : ''} ${titleClassName}`.trim()}
+    >
+      {eyebrow ? (
+        <span className='home-section-title-prefix'>{eyebrow} ：</span>
+      ) : null}
+      {title}
+    </h2>
+    {desc ? <p>{desc}</p> : null}
+  </div>
+);
 
-const promiseIconMap = {
-  'shield-check': ShieldCheck,
-  coins: Coins,
-  lock: Lock,
-  zap: Zap,
-  receipt: Receipt,
-  building: Building2,
-};
-
-const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
+const DefaultHomePage = ({
+  t,
+  docsLink,
+  isDemoSiteMode,
+}) => {
   const primaryLink = isDemoSiteMode ? '/console' : '/register';
   const docsHref = docsLink || 'https://doc.infistar.ai/';
+  const [previewReport, setPreviewReport] = useState(null);
+  const [activeReportKey, setActiveReportKey] = useState(verificationReports[0].key);
+  const [previousReportKey, setPreviousReportKey] = useState(null);
+  const [reportStackOrder, setReportStackOrder] = useState(
+    verificationReports.map((item) => item.key),
+  );
+  const activeReportIndex = Math.max(
+    verificationReports.findIndex((item) => item.key === activeReportKey),
+    0,
+  );
+  const activeReport = verificationReports[activeReportIndex];
+  const activateReport = (reportKey) => {
+    if (reportKey === activeReportKey) {
+      return;
+    }
+    setPreviousReportKey(activeReportKey);
+    setReportStackOrder((currentOrder) => [
+      reportKey,
+      ...currentOrder.filter(
+        (itemKey) => itemKey !== reportKey && itemKey !== activeReportKey,
+      ),
+      activeReportKey,
+    ]);
+    setActiveReportKey(reportKey);
+  };
+  useEffect(() => {
+    if (!previousReportKey) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      setPreviousReportKey(null);
+    }, 420);
+    return () => window.clearTimeout(timer);
+  }, [previousReportKey]);
 
   return (
-    <main id='homepage' data-homepage-default='true' className='header-offset-padding-top'>
-      <section className='relative overflow-hidden bg-[#FAFAFB] pb-32 pt-14'>
-        <div className='home-hero-glow pointer-events-none absolute right-0 top-0 h-[600px] w-[600px] -translate-y-1/3 translate-x-1/4 rounded-full bg-indigo-100/60 blur-[120px]' />
-
-        <div className='relative z-10 mx-auto max-w-7xl px-6'>
-          <div className='pt-6'>
-            <span
-              className='home-hero-badge mb-8 inline-flex items-center rounded-full border border-indigo-100 bg-white px-5 py-2 text-sm font-bold shadow-sm'
-              style={{ color: 'rgb(99 102 241 / var(--tw-bg-opacity, 1))' }}
-            >
-              <span className='home-hero-badge-dot mr-2.5 h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-500' />
-              {t(homeText.badge)}
+    <main id='homepage' data-homepage-default='true' className='home-shell header-offset-padding-top'>
+      <section className='home-hero'>
+        <div className='home-container home-hero-grid'>
+          <div className='home-hero-copy'>
+            <span className='home-hero-badge'>
+              <Sparkles size={16} />
+              {t('无限星河AI · 多模型调用入口')}
             </span>
-
-            <div className='grid grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,1.35fr)_auto] lg:gap-10'>
-              <div>
-                <h1
-                  className='text-[44px] font-black leading-[1.08] tracking-tight text-gray-900 lg:text-[64px]'
-                  dangerouslySetInnerHTML={{ __html: t(homeText.titleHtml) }}
-                />
-              </div>
-
-              <div className='flex flex-col items-start gap-4 lg:items-end lg:pb-2'>
-                <div className='flex flex-wrap justify-start gap-4 lg:justify-end'>
-                  <Link
-                    to={primaryLink}
-                    className='btn-primary rounded-2xl px-8 py-4 text-lg font-bold'
-                  >
-                    {t(
-                      isDemoSiteMode
-                        ? homeText.primaryConsole
-                        : homeText.primaryCta,
-                    )}
-                  </Link>
-                  <Link
-                    to='/pricing'
-                    className='rounded-2xl border border-gray-200 bg-white px-8 py-4 text-lg font-bold text-gray-900 transition-colors hover:bg-gray-50'
-                  >
-                    {t(homeText.pricingCta)}
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <p className='mt-8 max-w-5xl text-lg font-medium leading-relaxed text-gray-500 lg:text-xl'>
-              {t(homeText.subtitle)}
+            <h1 dangerouslySetInnerHTML={{ __html: t('hero-title') }} />
+            <p>
+              {t('面向个人用户和小团队，提供主流 AI 模型 API 调用入口和聚合对话站。')}
+              <br />
+              {t('您可以用一个 API Key 接入，也可以直接在网页里无感调用全平台模型。')}
             </p>
-          </div>
-        </div>
-      </section>
-
-      <section className='overflow-hidden border-y border-gray-100 bg-white py-16'>
-        <div className='mx-auto max-w-7xl px-6'>
-          <div className='grid grid-cols-1 items-start gap-8 lg:grid-cols-3'>
-            <div className='flex h-full flex-col items-center justify-center py-4 text-center'>
-              <div className='flex items-end justify-center gap-3'>
-                <span className='text-gradient text-6xl font-black leading-none lg:text-7xl'>
-                  99.9%
+            <div className='home-hero-tags'>
+              {heroTags.map((item) => (
+                <span key={item}>
+                  <CheckCircle2 size={15} />
+                  {t(item)}
                 </span>
-                <p className='home-trust-title pb-2 text-2xl font-black tracking-tight text-[#030712] lg:text-[28px]'>
-                  {t('可用承诺')}
-                </p>
-              </div>
-              <p className='mt-6 max-w-[320px] text-sm leading-7 text-gray-500'>
-                {t(
-                  '面向个人与企业用户，保障接口稳定、调用顺畅，日常使用更省心。',
-                )}
-              </p>
-            </div>
-
-            <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:col-span-2 lg:gap-8'>
-              {trustCards.map((item) => (
-                <div
-                  key={item.key}
-                  className='card-hover home-trust-card relative min-h-[164px] overflow-hidden rounded-[32px] px-8 py-6 transition-all'
-                >
-                  <p className='home-trust-title relative z-10 max-w-[210px] text-[24px] font-black leading-[1.18] tracking-tight text-[#030712]'>
-                    {t(item.titleKey)}
-                  </p>
-                  <p className='home-trust-desc relative z-10 mt-5 max-w-[265px] text-[15px] font-medium leading-7 text-[#AAB4C8]'>
-                    {t(item.descKey)}
-                  </p>
-                </div>
               ))}
             </div>
           </div>
+
+          <div className='home-hero-side-actions' aria-label={t('首页操作入口')}>
+            <Link to={primaryLink} className='home-primary-button'>
+              {t(isDemoSiteMode ? '进入控制台' : '立即开始')}
+              <ArrowRight size={18} />
+            </Link>
+            <Link to='/pricing' className='home-secondary-button'>
+              {t('查看模型与分组')}
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section id='promises' className='bg-[#FAFAFB] py-24'>
-        <div className='mx-auto max-w-7xl px-6'>
-          <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
-            {promiseItems.map((item) => {
-              const Icon = promiseIconMap[item.icon];
+      <section className='home-section home-section-muted home-trust-section'>
+        <div className='home-container'>
+          <SectionIntro
+            eyebrow={t('为什么选无限星河AI')}
+            title={t('把模型、价格、源头和线路讲清楚，再开始调用')}
+            desc={t(
+              '很多 API 平台看起来只是价格不同，真正影响体验的是模型有没有偷换、号池是否可控、线路是否稳定、缓存价格是否真实、扣费是否看得懂。',
+            )}
+            align='center'
+          />
+          <div className='home-trust-grid'>
+            {trustCards.map((item) => {
+              const Icon = item.icon;
               return (
-                <article
-                  key={item.key}
-                  data-home-promise={item.key}
-                  className='card-hover home-promise-card rounded-3xl bg-white p-8 transition-all'
-                >
-                  <h3 className='mb-3 flex items-center gap-3 text-xl font-bold text-gray-900'>
-                    <span className='home-promise-icon flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white'>
-                      <Icon size={20} strokeWidth={1.8} />
+                <article key={item.key} className='home-trust-card'>
+                  <div className='home-trust-card-header'>
+                    <span className='home-card-icon'>
+                      <Icon size={22} />
                     </span>
-                    <span>{t(item.titleKey)}</span>
-                  </h3>
-                  <p className='text-sm leading-relaxed text-gray-500'>
-                    {t(item.descKey)}
-                  </p>
+                    <h3>{t(item.title)}</h3>
+                  </div>
+                  <p>{t(item.desc)}</p>
+                  {item.highlight ? (
+                    <span className='home-trust-highlight'>
+                      {t(item.highlight)}
+                    </span>
+                  ) : null}
                 </article>
               );
             })}
@@ -279,24 +382,23 @@ const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
         </div>
       </section>
 
-      <section id='models' className='overflow-hidden bg-white py-20'>
-        <div className='mx-auto max-w-7xl px-6'>
-          <div className='mx-auto mb-14 max-w-3xl text-center'>
-            <h2 className='text-3xl font-black text-gray-900 lg:text-4xl'>
-              {t(homeText.modelsTitle)}
-            </h2>
-            <p className='mt-4 font-medium text-gray-500'>
-              {t(homeText.modelsSubtitle)}
-            </p>
-          </div>
-
-          <div className='mx-auto max-w-6xl'>
-            <div className='hidden lg:block'>
-              <div className='grid justify-center gap-y-1'>
+      <section id='models' className='home-section home-model-section'>
+        <div className='home-container'>
+          <SectionIntro
+            eyebrow={t('模型覆盖')}
+            title={t('主流模型集中到一个入口')}
+            desc={t(
+              '覆盖 ChatGPT、Claude、Gemini、Grok、Qwen、DeepSeek 等主流模型；具体模型覆盖和价格以模型广场实时展示为准。',
+            )}
+            align='center'
+          />
+          <div className='home-model-matrix'>
+            <div className='home-model-desktop-grid'>
+              <div className='home-model-row-stack'>
                 {modelLogoRows.map((row, rowIndex) => (
                   <div
                     key={`model-row-${rowIndex}`}
-                    className='flex justify-center gap-8'
+                    className={`home-model-row home-model-row-${rowIndex + 1}`}
                   >
                     {row.map((item) => (
                       <div key={item.key} className='home-model-diamond'>
@@ -304,18 +406,18 @@ const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
                           {item.file ? (
                             <ModelLogoImage
                               item={item}
-                              className='h-10 w-10 object-contain'
+                              className='home-model-mark'
                             />
                           ) : (
-                            <span className='text-gradient text-[28px] font-black leading-none'>
+                            <span className='home-model-more-count'>
                               {item.count}
                             </span>
                           )}
                           <div
-                            className={`mt-3 text-sm leading-none ${
+                            className={`home-model-name ${
                               item.featured
-                                ? 'font-black text-gray-900'
-                                : 'font-bold text-gray-700'
+                                ? 'home-model-name-featured'
+                                : ''
                             }`}
                           >
                             {item.name}
@@ -328,7 +430,7 @@ const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
               </div>
             </div>
 
-            <div className='grid grid-cols-3 justify-items-center gap-x-4 gap-y-6 sm:grid-cols-4 lg:hidden'>
+            <div className='home-model-mobile-grid'>
               {mobileModelLogoItems.map((item) => (
                 <div
                   key={`mobile-${item.key}`}
@@ -338,21 +440,15 @@ const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
                     {item.file ? (
                       <ModelLogoImage
                         item={item}
-                        className='h-8 w-8 object-contain'
+                        className='home-model-mark home-model-mark-mobile'
                       />
                     ) : (
-                      <span className='text-gradient text-2xl font-black leading-none'>
+                      <span className='home-model-more-count home-model-more-count-mobile'>
                         {item.count}
                       </span>
                     )}
-                    <div
-                      className={`mt-2 text-xs ${
-                        item.featured
-                          ? 'font-black text-gray-900'
-                          : 'font-bold text-gray-700'
-                      }`}
-                    >
-                      {item.key === 'more' ? '\u66f4\u591a' : item.name}
+                    <div className='home-model-name home-model-name-mobile'>
+                      {item.key === 'more' ? t('更多') : item.name}
                     </div>
                   </div>
                 </div>
@@ -362,78 +458,352 @@ const DefaultHomePage = ({ t, docsLink, isDemoSiteMode }) => {
         </div>
       </section>
 
-      <section id='cta' className='border-t border-gray-100 bg-[#FAFAFB] py-32'>
-        <div className='mx-auto max-w-4xl px-6 text-center'>
-          <h2 className='mb-6 text-3xl font-black leading-tight text-gray-900 lg:text-5xl'>
-            {t(homeText.ctaTitle)}
-          </h2>
-          <p className='mx-auto mb-10 max-w-2xl text-lg font-medium text-gray-500'>
-            {t(homeText.ctaDesc)}
-          </p>
-          <div className='flex flex-wrap justify-center gap-4'>
-            <Link
-              to={primaryLink}
-              className='btn-primary rounded-2xl px-10 py-4 text-lg font-bold shadow-xl'
+      <section className='home-section home-section-muted'>
+        <div className='home-container home-report-grid'>
+          <div className='home-report-folder'>
+            <div
+              className='home-report-folder-preview'
+              role='group'
+              aria-label={t('检测报告预览')}
             >
-              {t(isDemoSiteMode ? homeText.primaryConsole : homeText.ctaButton)}
+              {verificationReports.map((item) => {
+                const stackIndex = Math.max(reportStackOrder.indexOf(item.key), 0);
+                const isActive = stackIndex === 0;
+
+                return (
+                  <button
+                    type='button'
+                    key={item.key}
+                    className={`home-report-folder-sheet home-report-folder-sheet-${stackIndex} ${
+                      isActive ? 'is-active' : ''
+                    } ${
+                      previousReportKey === item.key && !isActive
+                        ? 'is-leaving'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      isActive
+                        ? setPreviewReport(item)
+                        : activateReport(item.key)
+                    }
+                    aria-label={t(
+                      isActive
+                        ? `预览${item.title}检测报告`
+                        : `切换到${item.title}检测报告`,
+                    )}
+                  >
+                    <img
+                      src={item.src}
+                      alt={t(`${item.title}检测报告`)}
+                    />
+                  </button>
+                );
+              })}
+              <button
+                type='button'
+                className='home-report-zoom home-report-folder-zoom'
+                onClick={() => setPreviewReport(activeReport)}
+                aria-label={t(`预览${activeReport.title}检测报告`)}
+              >
+                <ZoomIn size={16} />
+              </button>
+            </div>
+          </div>
+          <div>
+            <SectionIntro
+              title={
+                <>
+                  <span className='home-section-title-accent'>{t('验真：')}</span>
+                  {t('我们把“正规”做成一套可检查的标准')}
+                </>
+              }
+              titleClassName='home-section-title-mixed'
+              desc={t(
+                '无限星河AI 背后不是手工挑几个接口，而是围绕自建号池源头能力、模型验真、价格、缓存、冗余线路和运行观察持续治理。',
+              )}
+            />
+            <div className='home-standard-list'>
+              {standardRows.map((item) => (
+                <div key={item}>
+                  <CheckCircle2 size={18} />
+                  <span>{t(item)}</span>
+                </div>
+              ))}
+            </div>
+            <p className='home-note'>
+              {t(
+                '在自建号池覆盖的场景里，平台自己掌握供给源头；这不等于承诺任何线路永不异常，但会让异常变成可发现、可解释、可处理、可补位的问题。',
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className='home-section'>
+        <div className='home-container home-chat-grid'>
+          <div>
+            <SectionIntro
+              eyebrow={t('聚合对话站')}
+              title={t('不会接 API，也能直接用全平台模型')}
+              titleClassName='home-section-title-wrap'
+              desc={t(
+                '用户可以直接在网页里选择模型、上传文件、发起对话；专业用户可以先试模型，再把合适的模型接入自己的工具。',
+              )}
+            />
+            <div className='home-feature-grid'>
+              {chatFeatures.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className='home-feature-item'>
+                    <Icon size={19} />
+                    <span>{t(item.title)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <Link to='/chat' className='home-chat-action home-primary-button'>
+              {t('立即开始对话')}
+              <ArrowRight size={17} />
+            </Link>
+          </div>
+          <div className='home-chat-preview'>
+            <div className='home-chat-browser-bar'>
+              <div className='home-chat-browser-dots' aria-hidden='true'>
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className='home-chat-nav-preview'>
+                <span>{t('文档')}</span>
+                <span className='home-chat-nav-active'>
+                  <MessageSquareText size={16} />
+                  {t('对话')}
+                </span>
+              </div>
+            </div>
+
+            <div className='home-chat-window'>
+              <div className='home-chat-window-header'>
+                <div>
+                  <span>{t('聚合对话站')}</span>
+                  <strong>{t('选择模型后直接开始')}</strong>
+                </div>
+                <span className='home-chat-model-pill'>
+                  <Sparkles size={15} />
+                  {t('模型已就绪')}
+                </span>
+              </div>
+
+              <div className='home-chat-messages'>
+                <div className='home-chat-message home-chat-message-user'>
+                  <span>{t('我不会接 API，能直接问模型吗？')}</span>
+                </div>
+                <div className='home-chat-message home-chat-message-ai'>
+                  <span className='home-chat-avatar'>
+                    <MessageSquareText size={17} />
+                  </span>
+                  <p>
+                    {t(
+                      '可以。进入对话后选择可用模型，直接输入问题就能使用。',
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className='home-chat-quick-row'>
+                <span>{t('文本问答')}</span>
+                <span>{t('文件理解')}</span>
+                <span>{t('代码辅助')}</span>
+              </div>
+
+              <div className='home-chat-composer'>
+                <span>{t('输入问题，选择模型后发送')}</span>
+                <button type='button'>
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className='home-section home-section-muted'>
+        <div className='home-container home-pricing-grid'>
+          <div>
+            <SectionIntro
+              eyebrow={t('价格与缓存')}
+              title={t('直接对比官方价格，有无缓存价格可差10倍，分组告诉您实际成本')}
+              titleClassName='home-section-title-wrap'
+              desc={t(
+                '模型按量付费，输入、输出、缓存读取和缓存创建价格分开展示，不需要用户自己换算平均价。',
+              )}
+            />
+            <p className='home-price-note'>
+              {t(
+                '账户余额采用统一额度，一次充值即可使用平台内所有可用模型；长上下文和代码任务的缓存价格也会单独展示。',
+              )}
+            </p>
+            <div className='home-price-benefits'>
+              {priceBenefitItems.map((item) => (
+                <span key={item}>{t(item)}</span>
+              ))}
+            </div>
+          </div>
+          <div className='home-price-card'>
+            <div className='home-price-model-head'>
+              <span className='home-price-model-icon'>
+                <ModelLogoImage
+                  item={modelLogoRows[0][0]}
+                  className='home-price-model-logo'
+                />
+              </span>
+              <h3>{t('示例模型')}</h3>
+              <span className='home-price-billing-badge'>{t('按量计费')}</span>
+            </div>
+            <p className='home-price-model-desc'>
+              <span className='home-price-model-highlight'>{t('官方5折')}</span>
+              {t(
+                '，支持 1M 上下文、工具调用、图像理解和文件理解，适合多模态问答、资料分析和内容创作。',
+              )}
+            </p>
+            <div className='home-price-tag-row'>
+              {samplePriceTags.map((item) => (
+                <span key={item}>{t(item)}</span>
+              ))}
+            </div>
+            <div className='home-price-values'>
+              {samplePriceItems.map((item) => (
+                <div key={item.label} className='home-price-value-card'>
+                  <span>{t(item.label)}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className='home-section'>
+        <div className='home-container'>
+          <SectionIntro
+            eyebrow={t('分组怎么选')}
+            title={t('按使用场景选分组，不用先懂所有技术细节')}
+            desc={t(
+              '标准、企业、精选和品牌分组分别服务不同场景。用户先按任务选择，再进入模型广场查看具体价格和支持模型。',
+            )}
+            align='center'
+          />
+          <div className='home-group-grid'>
+            {groupCards.map((item) => (
+              <Link to='/pricing' key={item.key} className='home-group-card'>
+                <span>{t(item.eyebrow)}</span>
+                <h3>{t(item.title)}</h3>
+                <p>{t(item.desc)}</p>
+                <strong>
+                  {t(item.action)}
+                  <ArrowRight size={16} />
+                </strong>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className='home-section home-section-muted'>
+        <div className='home-container'>
+          <SectionIntro
+            eyebrow={t('常见问题')}
+            title={t('先把选择和风险讲清楚')}
+            align='center'
+          />
+          <div className='home-faq-grid'>
+            {faqs.map((item) => (
+              <article key={item.question} className='home-faq-card'>
+                <h3>{t(item.question)}</h3>
+                <p>{t(item.answer)}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id='cta' className='home-cta-section'>
+        <div className='home-container home-cta-card'>
+          <div className='home-cta-content'>
+            <h2>{t('一个简单入口，背后是自建号池与持续治理的供应链路')}</h2>
+          </div>
+          <div className='home-cta-bottom'>
+            <p>
+              {t(
+                '先在聚合对话站试模型，再按分组进入模型广场查看具体价格和支持范围。',
+              )}
+            </p>
+            <Link to={primaryLink} className='home-primary-button'>
+              {t(isDemoSiteMode ? '进入控制台' : '立即开始使用')}
+              <ArrowRight size={18} />
             </Link>
           </div>
         </div>
       </section>
 
-      <footer className='border-t border-gray-200 bg-white pb-10 pt-20'>
-        <div className='mx-auto max-w-7xl px-6'>
-          <div className='mb-16 grid grid-cols-1 items-start gap-10 md:grid-cols-2'>
-            <div>
-              <div className='mb-4 flex items-center gap-2 text-lg font-bold text-gray-900'>
-                <img
-                  src={homepageLogo}
-                  alt={t(homeText.footerBrand)}
-                  className='h-6 w-6 rounded-md object-contain'
-                />
-                {t(homeText.footerBrand)}
-              </div>
-              <p className='max-w-xs text-sm font-medium leading-relaxed text-gray-500'>
-                {t(homeText.footerDesc)}
-              </p>
+      <footer className='home-footer'>
+        <div className='home-container home-footer-grid'>
+          <div>
+            <div className='home-footer-brand'>
+              <img src={homepageLogo} alt={t('无限星河AI')} />
+              <strong>{t('无限星河AI')}</strong>
             </div>
-            <div>
-              <h4 className='mb-5 font-bold text-gray-900'>
-                {t(homeText.footerTitle)}
-              </h4>
-              <ul className='space-y-3 text-sm font-medium text-gray-500'>
-                <li>
-                  <a
-                    href='/pricing'
-                    className='transition-colors hover:text-indigo-600'
-                  >
-                    {t(homeText.footerModels)}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={docsHref}
-                    target={docsHref.startsWith('http') ? '_blank' : undefined}
-                    rel={
-                      docsHref.startsWith('http')
-                        ? 'noopener noreferrer'
-                        : undefined
-                    }
-                    className='transition-colors hover:text-indigo-600'
-                  >
-                    {t(homeText.footerDocs)}
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <p>
+              {t(
+                '让主流 AI 模型以更透明、可解释、低成本的方式服务个人用户和小团队。',
+              )}
+            </p>
           </div>
-          <div className='flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-8 text-xs font-bold uppercase tracking-wide text-gray-400 md:flex-row'>
-            <span className='text-center md:text-left'>
-              {t(homeText.footerCopy)}
-            </span>
+          <div className='home-footer-links'>
+            <strong>{t('产品与文档')}</strong>
+            <Link to='/pricing'>{t('模型与分组')}</Link>
+            <a
+              href={docsHref}
+              target={docsHref.startsWith('http') ? '_blank' : undefined}
+              rel={docsHref.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              {t('文档')}
+            </a>
           </div>
         </div>
       </footer>
+      {previewReport ? (
+        <div
+          className='home-report-preview'
+          role='dialog'
+          aria-modal='true'
+          aria-label={t(`${previewReport.title}检测报告预览`)}
+          onClick={() => setPreviewReport(null)}
+        >
+          <div
+            className='home-report-preview-panel'
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className='home-report-preview-header'>
+              <div>
+                <span>{t('检测报告')}</span>
+                <strong>{previewReport.title}</strong>
+              </div>
+              <button
+                type='button'
+                onClick={() => setPreviewReport(null)}
+                aria-label={t('关闭')}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <img
+              src={previewReport.src}
+              alt={t(`${previewReport.title}检测报告`)}
+            />
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 };
