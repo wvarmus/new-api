@@ -632,15 +632,15 @@ const DefaultHomePage = ({
           <div>
             <SectionIntro
               eyebrow={t('价格与缓存')}
-              title={t('直接对比官方价格，有无缓存价格可差10倍，分组告诉您实际成本')}
+              title={t('透明计费：告别隐形账单，彻底看清模型调用与缓存成本')}
               titleClassName='home-section-title-wrap'
               desc={t(
-                '模型按量付费，输入、输出、缓存读取和缓存创建价格分开展示，不需要用户自己换算平均价。',
+                '调用大模型的成本不仅限于基础的“输入”和“输出”。在处理长文档、代码分析或多轮对话时，上下文缓存（Cache）产生的费用经常被忽略，而这部分的成本差异有时高达 10 倍。',
               )}
             />
             <p className='home-price-note'>
               {t(
-                '账户余额采用统一额度，一次充值即可使用平台内所有可用模型；长上下文和代码任务的缓存价格也会单独展示。',
+                '为了让您的每一分钱都花得明明白白，我们将计费项进行了极致拆解：输入/输出单价、缓存读取/创建费用、官方原价与分组特惠价均独立展示，确保您精准掌握每一类用量的计费规则。',
               )}
             </p>
             <div className='home-price-benefits'>
@@ -730,12 +730,12 @@ const DefaultHomePage = ({
       <section id='cta' className='home-cta-section'>
         <div className='home-container home-cta-card'>
           <div className='home-cta-content'>
-            <h2>{t('一个简单入口，背后是自建号池与持续治理的供应链路')}</h2>
+            <h2>{t('每一次简单的调用，背后是全链路、全天候的算力网络保障')}</h2>
           </div>
           <div className='home-cta-bottom'>
             <p>
               {t(
-                '先在聚合对话站试模型，再按分组进入模型广场查看具体价格和支持范围。',
+                '我们在背后默默处理了无数的账号配置、安全规则与节点维护。您只需在这里轻松试用模型，对比透明报价，一键即可开箱即用。',
               )}
             </p>
             <Link to={primaryLink} className='home-primary-button'>
