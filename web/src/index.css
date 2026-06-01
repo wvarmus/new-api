@@ -6311,14 +6311,16 @@ body[data-home-mode='dark'] #nav .hover\:border-gray-300:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 28px;
   margin-top: 18px;
 }
 
 .home-cta-card p {
   margin-top: 0;
-  max-width: 660px;
+  max-width: none;
   opacity: 0.84;
+  white-space: nowrap;
 }
 
 .home-cta-card .home-primary-button {
@@ -6506,6 +6508,10 @@ body[data-home-mode='dark'] #nav .hover\:border-gray-300:hover {
   .home-footer-grid {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .home-cta-card p {
+    white-space: normal;
   }
 }
 
