@@ -47,6 +47,7 @@ const routerMap = {
   announcements: '/console/announcements',
   pricing: '/pricing',
   chat: '/console/chat',
+  playground: '/console/playground',
   task: '/console/task',
   promotion_event: '/console/promotion-event',
   models: '/console/models',
@@ -75,15 +76,21 @@ const SiderBar = ({ onNavigate = () => {} }) => {
   const location = useLocation();
 
   const chatItems = useMemo(() => {
-    if (!openWebUIEnabled) return [];
+    const items = [];
 
-    const items = [
-      {
+    if (openWebUIEnabled) {
+      items.push({
         text: t('对话'),
         itemKey: 'chat',
         to: '/console/chat',
-      },
-    ];
+      });
+    }
+
+    items.push({
+      text: t('操练场'),
+      itemKey: 'playground',
+      to: '/console/playground',
+    });
 
     return items.filter((item) => isModuleVisible('chat', item.itemKey));
   }, [openWebUIEnabled, t, isModuleVisible]);
@@ -403,16 +410,14 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           }}
         >
           {/* 聊天区域 */}
-          {openWebUIEnabled &&
-            hasSectionVisibleModules('chat') &&
-            chatItems.length > 0 && (
-              <div className='sidebar-section'>
-                {!collapsed && (
-                  <div className='sidebar-group-label'>{t('聊天')}</div>
-                )}
-                {chatItems.map((item) => renderSubItem(item))}
-              </div>
-            )}
+          {hasSectionVisibleModules('chat') && chatItems.length > 0 && (
+            <div className='sidebar-section'>
+              {!collapsed && (
+                <div className='sidebar-group-label'>{t('聊天')}</div>
+              )}
+              {chatItems.map((item) => renderSubItem(item))}
+            </div>
+          )}
 
           {/* 控制台区域 */}
           {hasSectionVisibleModules('console') && (

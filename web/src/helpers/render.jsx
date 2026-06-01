@@ -83,6 +83,7 @@ import {
   Store,
   Handshake,
   Bell,
+  SquareTerminal,
 } from 'lucide-react';
 import {
   SiAtlassian,
@@ -132,6 +133,8 @@ export function getLucideIcon(key, selected = false) {
       return <Handshake {...commonProps} color={iconColor} />;
     case 'announcements':
       return <Bell {...commonProps} color={iconColor} />;
+    case 'playground':
+      return <SquareTerminal {...commonProps} color={iconColor} />;
     case 'token':
       return <Key {...commonProps} color={iconColor} />;
     case 'log':

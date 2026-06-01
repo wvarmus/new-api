@@ -83,13 +83,16 @@ const PageLayout = () => {
   const isConsoleChatRoute =
     location.pathname === '/console/chat' ||
     location.pathname.startsWith('/console/chat/');
+  const isConsolePlaygroundRoute = location.pathname === '/console/playground';
   const shouldHideFooter =
     cardProPages.includes(location.pathname) ||
     isTopChatRoute ||
     isConsoleChatRoute;
 
   const shouldInnerPadding =
-    location.pathname.includes('/console') && !isConsoleChatRoute;
+    location.pathname.includes('/console') &&
+    !isConsoleChatRoute &&
+    !isConsolePlaygroundRoute;
 
   const isConsoleRoute = location.pathname.startsWith('/console');
   const isSidebarRoute =
