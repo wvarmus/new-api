@@ -65,6 +65,7 @@ const NotificationSettings = ({
   const [sidebarModulesUser, setSidebarModulesUser] = useState({
     chat: {
       enabled: true,
+      playground: true,
       chat: true,
     },
     console: {
@@ -158,6 +159,7 @@ const NotificationSettings = ({
     const defaultConfig = {
       chat: {
         enabled: true,
+        playground: true,
         chat: true,
       },
       console: {
@@ -263,8 +265,13 @@ const NotificationSettings = ({
     {
       key: 'chat',
       title: t('聊天区域'),
-      description: t('聊天会话管理'),
+      description: t('操练场和聊天功能'),
       modules: [
+        {
+          key: 'playground',
+          title: t('操练场'),
+          description: t('AI模型测试环境'),
+        },
         { key: 'chat', title: t('对话'), description: t('聊天会话管理') },
       ],
     },
