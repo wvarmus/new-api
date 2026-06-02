@@ -45,6 +45,7 @@ export const useRedemptionsData = () => {
     id: undefined,
   });
   const [showEdit, setShowEdit] = useState(false);
+  const [showBatchDisable, setShowBatchDisable] = useState(false);
 
   // Form API
   const [formApi, setFormApi] = useState(null);
@@ -279,6 +280,40 @@ export const useRedemptionsData = () => {
     });
   };
 
+  const batchDisableRedemptions = async (keys) => {
+    if (!Array.isArray(keys) || keys.length === 0) {
+      showError(t('请至少输入一个兑换码！'));
+      return null;
+    }
+
+    setLoading(true);
+    try {
+      const res = await API.post('/api/redemption/batch-disable', { keys });
+      const { success, message, data } = res.data;
+      if (success) {
+        const skipped =
+          (data?.already_disabled || 0) +
+          (data?.used || 0) +
+          (data?.expired || 0) +
+          (data?.not_found || 0);
+        showSuccess(
+          t('已禁用 {{disabled}} 个兑换码，跳过 {{skipped}} 个', {
+            disabled: data?.disabled || 0,
+            skipped,
+          }),
+        );
+        await refresh();
+        return data;
+      }
+      showError(message);
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      setLoading(false);
+    }
+    return null;
+  };
+
   // Close edit modal
   const closeEdit = () => {
     setShowEdit(false);
@@ -323,6 +358,7 @@ export const useRedemptionsData = () => {
     // Edit state
     editingRedemption,
     showEdit,
+    showBatchDisable,
 
     // Form state
     formApi,
@@ -346,6 +382,7 @@ export const useRedemptionsData = () => {
     setSelectedKeys,
     setEditingRedemption,
     setShowEdit,
+    setShowBatchDisable,
     setFormApi,
     setLoading,
 
@@ -360,6 +397,7 @@ export const useRedemptionsData = () => {
     // Batch operations
     batchCopyRedemptions,
     batchDeleteRedemptions,
+    batchDisableRedemptions,
 
     // Translation function
     t,

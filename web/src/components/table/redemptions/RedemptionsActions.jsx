@@ -24,6 +24,7 @@ const RedemptionsActions = ({
   selectedKeys,
   setEditingRedemption,
   setShowEdit,
+  setShowBatchDisable,
   batchCopyRedemptions,
   batchDeleteRedemptions,
   t,
@@ -54,6 +55,15 @@ const RedemptionsActions = ({
         size='small'
       >
         {t('复制所选兑换码到剪贴板')}
+      </Button>
+
+      <Button
+        type='warning'
+        className='flex-1 md:flex-initial'
+        onClick={() => setShowBatchDisable(true)}
+        size='small'
+      >
+        {t('批量禁用兑换码')}
       </Button>
 
       <Button
