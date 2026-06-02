@@ -26,6 +26,17 @@ type Redemption struct {
 	ExpiredTime  int64          `json:"expired_time" gorm:"bigint"` // 过期时间，0 表示不过期
 }
 
+type BatchDisableRedemptionsResult struct {
+	Requested       int      `json:"requested"`
+	Disabled        int64    `json:"disabled"`
+	AlreadyDisabled int      `json:"already_disabled"`
+	Used            int      `json:"used"`
+	Expired         int      `json:"expired"`
+	NotFound        int      `json:"not_found"`
+	NotFoundKeys    []string `json:"not_found_keys,omitempty"`
+	SkippedKeys     []string `json:"skipped_keys,omitempty"`
+}
+
 func GetAllRedemptions(startIdx int, num int) (redemptions []*Redemption, total int64, err error) {
 	// 开始事务
 	tx := DB.Begin()
@@ -201,4 +212,68 @@ func DeleteInvalidRedemptions() (int64, error) {
 	now := common.GetTimestamp()
 	result := DB.Where("status IN ? OR (status = ? AND expired_time != 0 AND expired_time < ?)", []int{common.RedemptionCodeStatusUsed, common.RedemptionCodeStatusDisabled}, common.RedemptionCodeStatusEnabled, now).Delete(&Redemption{})
 	return result.RowsAffected, result.Error
+}
+
+func BatchDisableRedemptionsByKeys(keys []string) (*BatchDisableRedemptionsResult, error) {
+	result := &BatchDisableRedemptionsResult{
+		Requested: len(keys),
+	}
+	if len(keys) == 0 {
+		return result, nil
+	}
+
+	now := common.GetTimestamp()
+	keyCol := redemptionKeyColumn()
+	var rows []Redemption
+	if err := DB.Where(keyCol+" IN ?", keys).Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	rowByKey := make(map[string]Redemption, len(rows))
+	for _, row := range rows {
+		rowByKey[row.Key] = row
+	}
+
+	idsToDisable := make([]int, 0)
+	for _, key := range keys {
+		row, ok := rowByKey[key]
+		if !ok {
+			result.NotFound++
+			result.NotFoundKeys = append(result.NotFoundKeys, key)
+			continue
+		}
+
+		switch row.Status {
+		case common.RedemptionCodeStatusEnabled:
+			if row.ExpiredTime != 0 && row.ExpiredTime < now {
+				result.Expired++
+				result.SkippedKeys = append(result.SkippedKeys, key)
+				continue
+			}
+			idsToDisable = append(idsToDisable, row.Id)
+		case common.RedemptionCodeStatusDisabled:
+			result.AlreadyDisabled++
+			result.SkippedKeys = append(result.SkippedKeys, key)
+		case common.RedemptionCodeStatusUsed:
+			result.Used++
+			result.SkippedKeys = append(result.SkippedKeys, key)
+		default:
+			result.SkippedKeys = append(result.SkippedKeys, key)
+		}
+	}
+
+	if len(idsToDisable) == 0 {
+		return result, nil
+	}
+
+	update := DB.Model(&Redemption{}).
+		Where("id IN ?", idsToDisable).
+		Where("status = ?", common.RedemptionCodeStatusEnabled).
+		Where("expired_time = 0 OR expired_time >= ?", now).
+		Update("status", common.RedemptionCodeStatusDisabled)
+	if update.Error != nil {
+		return nil, update.Error
+	}
+	result.Disabled = update.RowsAffected
+	return result, nil
 }

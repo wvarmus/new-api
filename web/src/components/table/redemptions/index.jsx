@@ -24,6 +24,7 @@ import RedemptionsActions from './RedemptionsActions';
 import RedemptionsFilters from './RedemptionsFilters';
 import RedemptionsDescription from './RedemptionsDescription';
 import EditRedemptionModal from './modals/EditRedemptionModal';
+import BatchDisableRedemptionsModal from './modals/BatchDisableRedemptionsModal';
 import { useRedemptionsData } from '../../../hooks/redemptions/useRedemptionsData';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { createCardProPagination } from '../../../helpers/utils';
@@ -35,6 +36,7 @@ const RedemptionsPage = () => {
   const {
     // Edit state
     showEdit,
+    showBatchDisable,
     editingRedemption,
     closeEdit,
     refresh,
@@ -43,8 +45,10 @@ const RedemptionsPage = () => {
     selectedKeys,
     setEditingRedemption,
     setShowEdit,
+    setShowBatchDisable,
     batchCopyRedemptions,
     batchDeleteRedemptions,
+    batchDisableRedemptions,
 
     // Filters state
     formInitValues,
@@ -69,6 +73,13 @@ const RedemptionsPage = () => {
         visiable={showEdit}
         handleClose={closeEdit}
       />
+      <BatchDisableRedemptionsModal
+        visible={showBatchDisable}
+        onCancel={() => setShowBatchDisable(false)}
+        batchDisableRedemptions={batchDisableRedemptions}
+        loading={loading}
+        t={t}
+      />
 
       <CardPro
         type='type1'
@@ -85,6 +96,7 @@ const RedemptionsPage = () => {
               selectedKeys={selectedKeys}
               setEditingRedemption={setEditingRedemption}
               setShowEdit={setShowEdit}
+              setShowBatchDisable={setShowBatchDisable}
               batchCopyRedemptions={batchCopyRedemptions}
               batchDeleteRedemptions={batchDeleteRedemptions}
               t={t}

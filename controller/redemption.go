@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/QuantumNous/new-api/common"
@@ -11,6 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+const batchDisableRedemptionLimit = 1000
+
+type batchDisableRedemptionsRequest struct {
+	Keys []string `json:"keys"`
+}
 
 func GetAllRedemptions(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
@@ -187,9 +194,58 @@ func DeleteInvalidRedemption(c *gin.Context) {
 	return
 }
 
+func BatchDisableRedemptions(c *gin.Context) {
+	req := batchDisableRedemptionsRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	keys := normalizeRedemptionKeys(req.Keys)
+	if len(keys) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "请至少输入一个兑换码",
+		})
+		return
+	}
+	if len(keys) > batchDisableRedemptionLimit {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "一次最多禁用 1000 个兑换码",
+		})
+		return
+	}
+
+	result, err := model.BatchDisableRedemptionsByKeys(keys)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    result,
+	})
+}
+
 func validateExpiredTime(c *gin.Context, expired int64) (bool, string) {
 	if expired != 0 && expired < common.GetTimestamp() {
 		return false, i18n.T(c, i18n.MsgRedemptionExpireTimeInvalid)
 	}
 	return true, ""
+}
+
+func normalizeRedemptionKeys(keys []string) []string {
+	seen := make(map[string]bool, len(keys))
+	normalized := make([]string, 0, len(keys))
+	for _, key := range keys {
+		key = strings.TrimSpace(key)
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		normalized = append(normalized, key)
+	}
+	return normalized
 }
