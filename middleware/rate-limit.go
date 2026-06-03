@@ -140,7 +140,7 @@ func isAdminWriteRateLimitPath(method string, path string) bool {
 		"/api/channel",
 		"/api/option",
 		"/api/deployments",
-		"/api/ratio-sync",
+		"/api/ratio_sync",
 	} {
 		if normalizedPath == prefix || strings.HasPrefix(normalizedPath, prefix+"/") {
 			return true

@@ -20,6 +20,9 @@ func TestTrustedAdminRateLimitMatch(t *testing.T) {
 	if !trustedAdminRateLimitMatch(http.MethodPut, "/api/option/", "10.0.0.8", "10.0.0.0/24") {
 		t.Fatal("trusted admin option write should support CIDR whitelist")
 	}
+	if !trustedAdminRateLimitMatch(http.MethodPost, "/api/ratio_sync/fetch", "192.168.50.116", "192.168.50.116") {
+		t.Fatal("trusted admin ratio sync write should use trusted admin limiter")
+	}
 	if trustedAdminRateLimitMatch(http.MethodGet, "/api/channel", "192.168.50.116", "192.168.50.116") {
 		t.Fatal("GET requests must keep the normal API limiter")
 	}
