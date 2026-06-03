@@ -113,6 +113,10 @@ func InitEnv() {
 	GlobalApiRateLimitEnable = GetEnvOrDefaultBool("GLOBAL_API_RATE_LIMIT_ENABLE", true)
 	GlobalApiRateLimitNum = GetEnvOrDefault("GLOBAL_API_RATE_LIMIT", 180)
 	GlobalApiRateLimitDuration = int64(GetEnvOrDefault("GLOBAL_API_RATE_LIMIT_DURATION", 180))
+	TrustedAdminApiRateLimitEnable = GetEnvOrDefaultBool("TRUSTED_ADMIN_API_RATE_LIMIT_ENABLE", false)
+	TrustedAdminApiRateLimitNum = GetEnvOrDefault("TRUSTED_ADMIN_API_RATE_LIMIT", 1200)
+	TrustedAdminApiRateLimitDuration = int64(GetEnvOrDefault("TRUSTED_ADMIN_API_RATE_LIMIT_DURATION", 180))
+	TrustedAdminApiRateLimitIPs = GetEnvOrDefaultString("TRUSTED_ADMIN_API_RATE_LIMIT_IPS", "")
 
 	GlobalWebRateLimitEnable = GetEnvOrDefaultBool("GLOBAL_WEB_RATE_LIMIT_ENABLE", true)
 	GlobalWebRateLimitNum = GetEnvOrDefault("GLOBAL_WEB_RATE_LIMIT", 60)

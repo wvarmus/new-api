@@ -3,7 +3,9 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -95,10 +97,80 @@ func GlobalWebRateLimit() func(c *gin.Context) {
 }
 
 func GlobalAPIRateLimit() func(c *gin.Context) {
-	if common.GlobalApiRateLimitEnable {
-		return rateLimitFactory(common.GlobalApiRateLimitNum, common.GlobalApiRateLimitDuration, "GA")
+	if !common.GlobalApiRateLimitEnable {
+		return defNext
 	}
-	return defNext
+	normalLimiter := rateLimitFactory(common.GlobalApiRateLimitNum, common.GlobalApiRateLimitDuration, "GA")
+	trustedAdminLimiter := rateLimitFactory(
+		common.TrustedAdminApiRateLimitNum,
+		common.TrustedAdminApiRateLimitDuration,
+		"TA",
+	)
+	return func(c *gin.Context) {
+		if trustedAdminRateLimitMatch(
+			c.Request.Method,
+			c.Request.URL.Path,
+			c.ClientIP(),
+			common.TrustedAdminApiRateLimitIPs,
+		) {
+			trustedAdminLimiter(c)
+			return
+		}
+		normalLimiter(c)
+	}
+}
+
+func trustedAdminRateLimitMatch(method string, path string, clientIP string, trustedIPs string) bool {
+	if !common.TrustedAdminApiRateLimitEnable {
+		return false
+	}
+	if !isAdminWriteRateLimitPath(method, path) {
+		return false
+	}
+	return trustedClientIP(clientIP, trustedIPs)
+}
+
+func isAdminWriteRateLimitPath(method string, path string) bool {
+	normalizedMethod := strings.ToUpper(strings.TrimSpace(method))
+	if normalizedMethod == "" || normalizedMethod == http.MethodGet || normalizedMethod == http.MethodHead || normalizedMethod == http.MethodOptions {
+		return false
+	}
+	normalizedPath := strings.TrimSpace(path)
+	for _, prefix := range []string{
+		"/api/channel",
+		"/api/option",
+		"/api/deployments",
+		"/api/ratio_sync",
+	} {
+		if normalizedPath == prefix || strings.HasPrefix(normalizedPath, prefix+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+func trustedClientIP(clientIP string, trustedIPs string) bool {
+	parsedClientIP := net.ParseIP(strings.TrimSpace(clientIP))
+	if parsedClientIP == nil {
+		return false
+	}
+	for _, rawItem := range strings.Split(trustedIPs, ",") {
+		item := strings.TrimSpace(rawItem)
+		if item == "" {
+			continue
+		}
+		if strings.Contains(item, "/") {
+			_, ipNet, err := net.ParseCIDR(item)
+			if err == nil && ipNet.Contains(parsedClientIP) {
+				return true
+			}
+			continue
+		}
+		if trustedIP := net.ParseIP(item); trustedIP != nil && trustedIP.Equal(parsedClientIP) {
+			return true
+		}
+	}
+	return false
 }
 
 func CriticalRateLimit() func(c *gin.Context) {
