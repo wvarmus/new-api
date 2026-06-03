@@ -20,20 +20,11 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import PricingFilterChips from './PricingFilterChips';
 
-const formatRatio = (ratio) => {
-  const normalizedRatio = ratio ?? 1;
-  const numericRatio = Number(normalizedRatio);
-  if (Number.isFinite(numericRatio)) {
-    return `${Number.parseFloat(numericRatio.toFixed(4))}x`;
-  }
-  return `${normalizedRatio}x`;
-};
-
 const PricingGroups = ({
   filterGroup,
   setFilterGroup,
   usableGroup = {},
-  groupRatio = {},
+  models = [],
   loading = false,
   t,
 }) => {
@@ -45,7 +36,11 @@ const PricingGroups = ({
   const items = groups.map((group) => ({
     value: group,
     label: group === 'all' ? t('全部分组') : group,
-    tagCount: group === 'all' ? undefined : formatRatio(groupRatio[group]),
+    tagCount:
+      group === 'all'
+        ? models.length
+        : models.filter((model) => model.enable_groups?.includes(group))
+            .length,
   }));
 
   return (
