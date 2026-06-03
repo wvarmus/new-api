@@ -139,8 +139,8 @@ const groupCards = [
   {
     key: 'brand',
     eyebrow: '品牌分组',
-    title: '按 Claude / GPT / Gemini 选择',
-    desc: '适合明确知道模型品牌的用户，在品牌下选择标准或企业线路。',
+    title: '按模型品牌选择',
+    desc: '适合明确了解模型品牌的用户，按品牌下选择标准、企业、精品线路。',
     action: '查看品牌模型',
   },
 ];
@@ -322,7 +322,7 @@ const DefaultHomePage = ({
             </span>
             <h1 dangerouslySetInnerHTML={{ __html: t('hero-title') }} />
             <p>
-              {t('面向个人用户和小团队，提供主流 AI 模型 API 调用入口和聚合对话站。')}
+              {t('面向个人和企业，提供主流 AI 模型 API 调用入口和聚合对话站。')}
               <br />
               {t('您可以用一个 API Key 接入，也可以直接在网页里无感调用全平台模型。')}
             </p>
@@ -352,7 +352,7 @@ const DefaultHomePage = ({
         <div className='home-container'>
           <SectionIntro
             eyebrow={t('为什么选无限星河AI')}
-            title={t('把模型、价格、源头和线路讲清楚，再开始调用')}
+            title={t('把模型、价格、源头和线路讲清楚，再开始使用')}
             desc={t(
               '很多 API 平台看起来只是价格不同，真正影响体验的是模型有没有偷换、号池是否可控、线路是否稳定、缓存价格是否真实、扣费是否看得懂。',
             )}
