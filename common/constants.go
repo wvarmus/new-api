@@ -165,6 +165,11 @@ var (
 	GlobalApiRateLimitNum      int
 	GlobalApiRateLimitDuration int64
 
+	TrustedAdminApiRateLimitEnable   bool
+	TrustedAdminApiRateLimitNum      int
+	TrustedAdminApiRateLimitDuration int64
+	TrustedAdminApiRateLimitIPs      string
+
 	GlobalWebRateLimitEnable   bool
 	GlobalWebRateLimitNum      int
 	GlobalWebRateLimitDuration int64
