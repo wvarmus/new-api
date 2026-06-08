@@ -107,6 +107,10 @@ func GlobalAPIRateLimit() func(c *gin.Context) {
 		"TA",
 	)
 	return func(c *gin.Context) {
+		if IsOpenWebUIIntegrationPath(c.Request.URL.Path) {
+			c.Next()
+			return
+		}
 		if trustedAdminRateLimitMatch(
 			c.Request.Method,
 			c.Request.URL.Path,

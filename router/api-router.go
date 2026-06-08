@@ -32,10 +32,10 @@ func SetApiRouter(router *gin.Engine) {
 		openWebUIRoute := apiRouter.Group("/open-webui")
 		{
 			openWebUIRoute.GET("/avatar/:user_id", controller.GetOpenWebUIAvatar)
-			openWebUIRoute.POST("/sso/token", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GenerateOpenWebUISSOToken)
-			openWebUIRoute.POST("/sso/verify", middleware.CriticalRateLimit(), controller.VerifyOpenWebUISSOToken)
-			openWebUIRoute.POST("/token-groups", middleware.CriticalRateLimit(), controller.GetOpenWebUITokenGroups)
-			openWebUIRoute.POST("/token-group/switch", middleware.CriticalRateLimit(), controller.SwitchOpenWebUITokenGroup)
+			openWebUIRoute.POST("/sso/token", middleware.UserAuth(), controller.GenerateOpenWebUISSOToken)
+			openWebUIRoute.POST("/sso/verify", middleware.OpenWebUIIntegrationAuth(), controller.VerifyOpenWebUISSOToken)
+			openWebUIRoute.POST("/token-groups", middleware.OpenWebUIIntegrationAuth(), controller.GetOpenWebUITokenGroups)
+			openWebUIRoute.POST("/token-group/switch", middleware.OpenWebUIIntegrationAuth(), controller.SwitchOpenWebUITokenGroup)
 		}
 
 		//apiRouter.GET("/midjourney", controller.GetMidjourney)
