@@ -1762,6 +1762,7 @@
     "文字输出：{{tokens}} / 1M * 模型倍率 {{modelRatio}} * 补全倍率 {{completionRatio}} * {{ratioType}} {{ratio}} = {{amount}}": "Sortie texte : {{tokens}} / 1M * ratio du modèle {{modelRatio}} * ratio de complétion {{completionRatio}} * {{ratioType}} {{ratio}} = {{amount}}",
     "文心一言": "ERNIE Bot",
     "文档": "Documentation",
+    "联系客服": "Contacter le support",
     "文档地址": "Lien du document",
     "文生视频": "Texte vers vidéo",
     "新增": "added",
@@ -3633,6 +3634,19 @@
     "默认用户消息": "Bonjour",
     "默认补全倍率": "Taux de complétion par défaut",
     "一个认真做服务的平台。": "Une plateforme qui prend le service au sérieux.",
+    "让主流 AI 模型以更透明、可解释、低成本的方式服务个人与企业。": "Mettre les principaux modèles d'IA au service des particuliers et des entreprises de manière plus transparente, explicable et économique.",
+    "数据隐私与安全": "Confidentialité et sécurité des données",
+    "数据隐私与安全承诺": "Engagement sur la confidentialité et la sécurité des données",
+    "安全保障能力": "Mesures de sécurité",
+    "我们重视每一位用户的数据隐私与信息安全。平台仅在提供服务和保障安全所必需的范围内处理数据，并通过加密传输、权限隔离、访问审计、异常监测等方式降低数据泄露和滥用风险。": "Nous accordons une grande importance à la confidentialité des données et à la sécurité de l'information de chaque utilisateur. La plateforme ne traite les données que dans la mesure nécessaire à la fourniture du service et à la sécurité, avec transmission chiffrée, isolation des droits, audits d'accès et surveillance des anomalies afin de réduire les risques de fuite et d'abus.",
+    "涉及内容安全审核的数据，仅会通过依法合规、具备安全保障能力的信息安全审核通道进行必要识别，不会用于无关用途。我们不会出售、出租、公开披露用户数据，也不会将用户数据用于未经授权的商业化使用。": "Les données liées à l'examen de sécurité du contenu ne sont utilisées que pour l'identification nécessaire via des canaux d'examen conformes à la loi et dotés de garanties de sécurité, sans usage non lié. Nous ne vendons pas, ne louons pas, ne divulguons pas publiquement les données utilisateur et ne les utilisons pas à des fins commerciales non autorisées.",
+    "如发现涉嫌违法犯罪、危害国家安全、公共利益或侵害他人合法权益的行为，我们将依法保留必要线索，并配合有权机关进行处理。": "En cas de soupçon d'infraction, de menace pour la sécurité nationale ou l'intérêt public, ou d'atteinte aux droits légitimes d'autrui, nous conserverons les éléments nécessaires conformément à la loi et coopérerons avec les autorités compétentes.",
+    "加密传输": "Transmission chiffrée",
+    "权限隔离": "Isolation des droits",
+    "访问审计": "Audit des accès",
+    "异常监测": "Surveillance des anomalies",
+    "合规审核通道": "Canal d'examen conforme",
+    "未授权商业化限制": "Limitation de commercialisation non autorisée",
     "邀请链接": "Lien d'invitation"
   }
 }

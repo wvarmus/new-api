@@ -1734,6 +1734,7 @@
     "文字输出：{{tokens}} / 1M * 模型倍率 {{modelRatio}} * 补全倍率 {{completionRatio}} * {{ratioType}} {{ratio}} = {{amount}}": "Đầu ra văn bản: {{tokens}} / 1M * hệ số mô hình {{modelRatio}} * hệ số hoàn thành {{completionRatio}} * {{ratioType}} {{ratio}} = {{amount}}",
     "文心一言": "ERNIE Bot",
     "文档": "Tài liệu",
+    "联系客服": "Liên hệ hỗ trợ",
     "文档地址": "Liên kết tài liệu",
     "文生视频": "Văn bản sang video",
     "新增": "added",
@@ -4165,6 +4166,19 @@
     "默认用户消息": "Xin chào",
     "默认补全倍率": "Tỷ lệ hoàn thành mặc định",
     "一个认真做服务的平台。": "Một nền tảng nghiêm túc trong việc cung cấp dịch vụ.",
+    "让主流 AI 模型以更透明、可解释、低成本的方式服务个人与企业。": "Đưa các mô hình AI phổ biến phục vụ cá nhân và doanh nghiệp theo cách minh bạch, dễ giải thích và tiết kiệm chi phí hơn.",
+    "数据隐私与安全": "Quyền riêng tư và bảo mật dữ liệu",
+    "数据隐私与安全承诺": "Cam kết về quyền riêng tư và bảo mật dữ liệu",
+    "安全保障能力": "Biện pháp bảo mật",
+    "我们重视每一位用户的数据隐私与信息安全。平台仅在提供服务和保障安全所必需的范围内处理数据，并通过加密传输、权限隔离、访问审计、异常监测等方式降低数据泄露和滥用风险。": "Chúng tôi coi trọng quyền riêng tư dữ liệu và an toàn thông tin của mọi người dùng. Nền tảng chỉ xử lý dữ liệu trong phạm vi cần thiết để cung cấp dịch vụ và bảo đảm an toàn, đồng thời giảm rủi ro rò rỉ và lạm dụng thông qua truyền tải mã hóa, tách biệt quyền hạn, kiểm toán truy cập và giám sát bất thường.",
+    "涉及内容安全审核的数据，仅会通过依法合规、具备安全保障能力的信息安全审核通道进行必要识别，不会用于无关用途。我们不会出售、出租、公开披露用户数据，也不会将用户数据用于未经授权的商业化使用。": "Dữ liệu liên quan đến kiểm duyệt an toàn nội dung chỉ được dùng cho nhận diện cần thiết thông qua kênh kiểm duyệt an toàn thông tin hợp pháp, tuân thủ và có năng lực bảo vệ an toàn, không dùng cho mục đích không liên quan. Chúng tôi không bán, cho thuê, công khai tiết lộ dữ liệu người dùng hoặc dùng dữ liệu đó cho mục đích thương mại hóa chưa được ủy quyền.",
+    "如发现涉嫌违法犯罪、危害国家安全、公共利益或侵害他人合法权益的行为，我们将依法保留必要线索，并配合有权机关进行处理。": "Nếu phát hiện hành vi nghi ngờ vi phạm pháp luật, gây nguy hại đến an ninh quốc gia, lợi ích công cộng hoặc xâm phạm quyền lợi hợp pháp của người khác, chúng tôi sẽ lưu giữ manh mối cần thiết theo luật và phối hợp với cơ quan có thẩm quyền xử lý.",
+    "加密传输": "Truyền tải mã hóa",
+    "权限隔离": "Tách biệt quyền hạn",
+    "访问审计": "Kiểm toán truy cập",
+    "异常监测": "Giám sát bất thường",
+    "合规审核通道": "Kênh kiểm duyệt tuân thủ",
+    "未授权商业化限制": "Hạn chế thương mại hóa chưa ủy quyền",
     "邀请链接": "Liên kết mời"
   }
 }

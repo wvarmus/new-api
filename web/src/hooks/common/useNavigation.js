@@ -19,6 +19,9 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useMemo } from 'react';
 
+const CONTACT_SUPPORT_LINK =
+  'https://doc.infistar.ai/contact-feedback/contact-feedback/';
+
 export const useNavigation = (
   t,
   docsLink,
@@ -77,6 +80,16 @@ export const useNavigation = (
         itemKey: 'partners',
         to: '/partners/promoter',
       },
+      ...(docsLink
+        ? [
+            {
+              text: t('联系客服'),
+              itemKey: 'contact-support',
+              isExternal: true,
+              externalLink: CONTACT_SUPPORT_LINK,
+            },
+          ]
+        : []),
       {
         text: t('关于'),
         itemKey: 'about',
@@ -87,6 +100,9 @@ export const useNavigation = (
     // 根据配置过滤导航链接
     return allLinks.filter((link) => {
       if (link.itemKey === 'docs') {
+        return docsLink && modules.docs;
+      }
+      if (link.itemKey === 'contact-support') {
         return docsLink && modules.docs;
       }
       if (link.itemKey === 'pricing') {
