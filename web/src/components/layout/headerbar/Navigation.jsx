@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquareText } from 'lucide-react';
+import { Headset, MessageSquareText } from 'lucide-react';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 
 const Navigation = ({
@@ -33,13 +33,19 @@ const Navigation = ({
     mainNavLinks.map((link) => {
       const commonLinkClasses =
         'transition-colors hover:text-indigo-600 whitespace-nowrap';
-      const isAccentLink = ['chat', 'partners'].includes(link.itemKey);
+      const isAccentLink = ['chat', 'partners', 'contact-support'].includes(
+        link.itemKey,
+      );
+      const isContactSupportLink = link.itemKey === 'contact-support';
       const linkClasses =
         isAccentLink
           ? 'inline-flex items-center gap-1.5 font-bold text-[#4f46e5] transition-colors hover:text-emerald-500 whitespace-nowrap'
           : commonLinkClasses;
       const linkContent = (
         <>
+          {isContactSupportLink ? (
+            <Headset size={15} strokeWidth={2.2} aria-hidden='true' />
+          ) : null}
           {link.itemKey === 'chat' ? (
             <MessageSquareText size={16} strokeWidth={2.2} aria-hidden='true' />
           ) : null}

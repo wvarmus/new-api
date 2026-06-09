@@ -162,6 +162,21 @@ const samplePriceItems = [
 
 const priceBenefitItems = ['按量付费', '统一余额', '一次充值用所有可用模型'];
 
+const privacySecurityParagraphs = [
+  '我们重视每一位用户的数据隐私与信息安全。平台仅在提供服务和保障安全所必需的范围内处理数据，并通过加密传输、权限隔离、访问审计、异常监测等方式降低数据泄露和滥用风险。',
+  '涉及内容安全审核的数据，仅会通过依法合规、具备安全保障能力的信息安全审核通道进行必要识别，不会用于无关用途。我们不会出售、出租、公开披露用户数据，也不会将用户数据用于未经授权的商业化使用。',
+  '如发现涉嫌违法犯罪、危害国家安全、公共利益或侵害他人合法权益的行为，我们将依法保留必要线索，并配合有权机关进行处理。',
+];
+
+const privacySecurityControls = [
+  '加密传输',
+  '权限隔离',
+  '访问审计',
+  '异常监测',
+  '合规审核通道',
+  '未授权商业化限制',
+];
+
 const verificationReports = [
   {
     key: 'gpt-55',
@@ -251,6 +266,7 @@ const SectionIntro = ({
   desc,
   align = 'left',
   titleClassName = '',
+  eyebrowSeparator = '：',
 }) => (
   <div
     className={`home-section-intro ${
@@ -261,7 +277,7 @@ const SectionIntro = ({
       className={`${eyebrow ? 'home-section-title-inline' : ''} ${titleClassName}`.trim()}
     >
       {eyebrow ? (
-        <span className='home-section-title-prefix'>{eyebrow} ：</span>
+        <span className='home-section-title-prefix'>{eyebrow}{eyebrowSeparator}</span>
       ) : null}
       {title}
     </h2>
@@ -276,6 +292,12 @@ const DefaultHomePage = ({
 }) => {
   const primaryLink = isDemoSiteMode ? '/console' : '/register';
   const docsHref = docsLink || 'https://doc.infistar.ai/';
+  const sectionIntroSeparator = t('home-section-intro-separator', {
+    defaultValue: '：',
+  });
+  const LocalizedSectionIntro = (props) => (
+    <SectionIntro eyebrowSeparator={sectionIntroSeparator} {...props} />
+  );
   const [previewReport, setPreviewReport] = useState(null);
   const [activeReportKey, setActiveReportKey] = useState(verificationReports[0].key);
   const [previousReportKey, setPreviousReportKey] = useState(null);
@@ -350,7 +372,7 @@ const DefaultHomePage = ({
 
       <section className='home-section home-section-muted home-trust-section'>
         <div className='home-container'>
-          <SectionIntro
+          <LocalizedSectionIntro
             eyebrow={t('为什么选无限星河AI')}
             title={t('把模型、价格、源头和线路讲清楚，再开始使用')}
             desc={t(
@@ -384,7 +406,7 @@ const DefaultHomePage = ({
 
       <section id='models' className='home-section home-model-section'>
         <div className='home-container'>
-          <SectionIntro
+          <LocalizedSectionIntro
             eyebrow={t('模型覆盖')}
             title={t('主流模型集中到一个入口')}
             desc={t(
@@ -420,7 +442,7 @@ const DefaultHomePage = ({
                                 : ''
                             }`}
                           >
-                            {item.name}
+                            {item.key === 'more' ? t('更多模型') : item.name}
                           </div>
                         </div>
                       </div>
@@ -448,7 +470,7 @@ const DefaultHomePage = ({
                       </span>
                     )}
                     <div className='home-model-name home-model-name-mobile'>
-                      {item.key === 'more' ? t('更多') : item.name}
+                      {item.key === 'more' ? t('更多模型') : item.name}
                     </div>
                   </div>
                 </div>
@@ -487,14 +509,13 @@ const DefaultHomePage = ({
                         : activateReport(item.key)
                     }
                     aria-label={t(
-                      isActive
-                        ? `预览${item.title}检测报告`
-                        : `切换到${item.title}检测报告`,
+                      isActive ? '预览检测报告' : '切换检测报告',
+                      { title: item.title },
                     )}
                   >
                     <img
                       src={item.src}
-                      alt={t(`${item.title}检测报告`)}
+                      alt={t('模型检测报告', { title: item.title })}
                     />
                   </button>
                 );
@@ -503,14 +524,14 @@ const DefaultHomePage = ({
                 type='button'
                 className='home-report-zoom home-report-folder-zoom'
                 onClick={() => setPreviewReport(activeReport)}
-                aria-label={t(`预览${activeReport.title}检测报告`)}
+                aria-label={t('预览检测报告', { title: activeReport.title })}
               >
                 <ZoomIn size={16} />
               </button>
             </div>
           </div>
           <div>
-            <SectionIntro
+            <LocalizedSectionIntro
               title={
                 <>
                   <span className='home-section-title-accent'>{t('验真：')}</span>
@@ -542,7 +563,7 @@ const DefaultHomePage = ({
       <section className='home-section'>
         <div className='home-container home-chat-grid'>
           <div>
-            <SectionIntro
+            <LocalizedSectionIntro
               eyebrow={t('聚合对话站')}
               title={t('不会接 API，也能直接用全平台模型')}
               titleClassName='home-section-title-wrap'
@@ -630,7 +651,7 @@ const DefaultHomePage = ({
       <section className='home-section home-section-muted'>
         <div className='home-container home-pricing-grid'>
           <div>
-            <SectionIntro
+            <LocalizedSectionIntro
               eyebrow={t('价格与缓存')}
               title={t('透明计费：告别隐形账单，彻底看清模型调用与缓存成本')}
               titleClassName='home-section-title-wrap'
@@ -685,7 +706,7 @@ const DefaultHomePage = ({
 
       <section className='home-section'>
         <div className='home-container'>
-          <SectionIntro
+          <LocalizedSectionIntro
             eyebrow={t('分组怎么选')}
             title={t('按使用场景选分组，不用先懂所有技术细节')}
             desc={t(
@@ -709,9 +730,38 @@ const DefaultHomePage = ({
         </div>
       </section>
 
-      <section className='home-section home-section-muted'>
+      <section className='home-section home-section-muted home-security-section'>
         <div className='home-container'>
-          <SectionIntro
+          <article className='home-security-card'>
+            <div className='home-security-copy'>
+              <span className='home-security-badge'>
+                <ShieldCheck size={16} />
+                {t('数据隐私与安全')}
+              </span>
+              <h2>{t('数据隐私与安全承诺')}</h2>
+              <div className='home-security-paragraphs'>
+                {privacySecurityParagraphs.map((paragraph) => (
+                  <p key={paragraph}>{t(paragraph)}</p>
+                ))}
+              </div>
+            </div>
+            <div className='home-security-controls'>
+              <div>
+                {privacySecurityControls.map((item) => (
+                  <span key={item}>
+                    <CheckCircle2 size={17} />
+                    {t(item)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className='home-section'>
+        <div className='home-container'>
+          <LocalizedSectionIntro
             eyebrow={t('常见问题')}
             title={t('先把选择和风险讲清楚')}
             align='center'
@@ -755,7 +805,7 @@ const DefaultHomePage = ({
             </div>
             <p>
               {t(
-                '让主流 AI 模型以更透明、可解释、低成本的方式服务个人用户和小团队。',
+                '让主流 AI 模型以更透明、可解释、低成本的方式服务个人与企业。',
               )}
             </p>
           </div>
@@ -777,7 +827,7 @@ const DefaultHomePage = ({
           className='home-report-preview'
           role='dialog'
           aria-modal='true'
-          aria-label={t(`${previewReport.title}检测报告预览`)}
+          aria-label={t('检测报告预览标题', { title: previewReport.title })}
           onClick={() => setPreviewReport(null)}
         >
           <div
@@ -799,7 +849,7 @@ const DefaultHomePage = ({
             </div>
             <img
               src={previewReport.src}
-              alt={t(`${previewReport.title}检测报告`)}
+              alt={t('模型检测报告', { title: previewReport.title })}
             />
           </div>
         </div>
