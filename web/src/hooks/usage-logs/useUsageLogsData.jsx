@@ -430,8 +430,16 @@ export const useLogsData = () => {
           expandDataLocal.push({
             key: t('日志详情'),
             value: other?.claude
-              ? renderClaudeLogContent({ ...other, displayMode: billingDisplayMode })
-              : renderLogContent({ ...other, displayMode: billingDisplayMode }),
+              ? renderClaudeLogContent({
+                  ...other,
+                  displayMode: billingDisplayMode,
+                  hideGroupRatio: true,
+                })
+              : renderLogContent({
+                  ...other,
+                  displayMode: billingDisplayMode,
+                  hideGroupRatio: true,
+                }),
           });
         }
         if (logs[i]?.content) {

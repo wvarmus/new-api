@@ -2139,6 +2139,7 @@ export function renderLogContent(opts) {
     file_search: fileSearch = false,
     file_search_call_count: fileSearchCallCount = 0,
     displayMode = 'price',
+    hideGroupRatio = false,
   } = opts;
   const {
     ratio,
@@ -2151,13 +2152,16 @@ export function renderLogContent(opts) {
 
   if (isPriceDisplayMode(displayMode, modelPrice)) {
     if (modelPrice !== -1) {
-      return joinBillingSummary([
+      const parts = [
         i18next.t('模型价格 {{symbol}}{{price}} / 次', {
           symbol,
           price: (modelPrice * rate).toFixed(6),
         }),
-        getGroupRatioText(groupRatio, user_group_ratio),
-      ]);
+      ];
+      if (!hideGroupRatio) {
+        parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+      }
+      return joinBillingSummary(parts);
     }
 
     const parts = [
@@ -2204,11 +2208,19 @@ export function renderLogContent(opts) {
         fileSearchCallCount,
       },
     );
-    parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+    if (!hideGroupRatio) {
+      parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+    }
     return joinBillingSummary(parts);
   }
 
   if (modelPrice !== -1) {
+    if (hideGroupRatio) {
+      return i18next.t('模型价格 {{symbol}}{{price}} / 次', {
+        symbol: symbol,
+        price: (modelPrice * rate).toFixed(6),
+      });
+    }
     return i18next.t('模型价格 {{symbol}}{{price}}，{{ratioType}} {{ratio}}', {
       symbol: symbol,
       price: (modelPrice * rate).toFixed(6),
@@ -2216,42 +2228,32 @@ export function renderLogContent(opts) {
       ratio,
     });
   } else {
+    const parts = [
+      i18next.t('模型倍率 {{modelRatio}}', { modelRatio: modelRatio }),
+      i18next.t('缓存倍率 {{cacheRatio}}', { cacheRatio: cacheRatio }),
+      i18next.t('输出倍率 {{completionRatio}}', {
+        completionRatio: completionRatio,
+      }),
+    ];
     if (image) {
-      return i18next.t(
-        '模型倍率 {{modelRatio}}，缓存倍率 {{cacheRatio}}，输出倍率 {{completionRatio}}，图片输入倍率 {{imageRatio}}，{{ratioType}} {{ratio}}',
-        {
-          modelRatio: modelRatio,
-          cacheRatio: cacheRatio,
-          completionRatio: completionRatio,
-          imageRatio: imageRatio,
+      parts.push(i18next.t('图片输入倍率 {{imageRatio}}', { imageRatio }));
+    }
+    if (!hideGroupRatio) {
+      parts.push(
+        i18next.t('{{ratioType}} {{ratio}}', {
           ratioType: ratioLabel,
           ratio,
-        },
-      );
-    } else if (webSearch) {
-      return i18next.t(
-        '模型倍率 {{modelRatio}}，缓存倍率 {{cacheRatio}}，输出倍率 {{completionRatio}}，{{ratioType}} {{ratio}}，Web 搜索调用 {{webSearchCallCount}} 次',
-        {
-          modelRatio: modelRatio,
-          cacheRatio: cacheRatio,
-          completionRatio: completionRatio,
-          ratioType: ratioLabel,
-          ratio,
-          webSearchCallCount,
-        },
-      );
-    } else {
-      return i18next.t(
-        '模型倍率 {{modelRatio}}，缓存倍率 {{cacheRatio}}，输出倍率 {{completionRatio}}，{{ratioType}} {{ratio}}',
-        {
-          modelRatio: modelRatio,
-          cacheRatio: cacheRatio,
-          completionRatio: completionRatio,
-          ratioType: ratioLabel,
-          ratio,
-        },
+        }),
       );
     }
+    if (webSearch) {
+      parts.push(
+        i18next.t('Web 搜索调用 {{webSearchCallCount}} 次', {
+          webSearchCallCount,
+        }),
+      );
+    }
+    return parts.join('，');
   }
 }
 
@@ -3145,6 +3147,7 @@ export function renderClaudeLogContent(opts) {
     cache_creation_tokens_1h: cacheCreationTokens1h = 0,
     cache_creation_ratio_1h: cacheCreationRatio1h = 1.0,
     displayMode = 'price',
+    hideGroupRatio = false,
   } = opts;
   const { ratio: effectiveGroupRatio, label: ratioLabel } = getEffectiveRatio(
     _groupRatio,
@@ -3157,13 +3160,16 @@ export function renderClaudeLogContent(opts) {
 
   if (isPriceDisplayMode(displayMode, modelPrice)) {
     if (modelPrice !== -1) {
-      return joinBillingSummary([
+      const parts = [
         i18next.t('模型价格 {{symbol}}{{price}} / 次', {
           symbol,
           price: (modelPrice * rate).toFixed(6),
         }),
-        getGroupRatioText(groupRatio, user_group_ratio),
-      ]);
+      ];
+      if (!hideGroupRatio) {
+        parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+      }
+      return joinBillingSummary(parts);
     }
 
     const parts = [
@@ -3209,11 +3215,19 @@ export function renderClaudeLogContent(opts) {
         price: (modelRatio * 2.0 * cacheCreationRatio * rate).toFixed(6),
       },
     );
-    parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+    if (!hideGroupRatio) {
+      parts.push(getGroupRatioText(groupRatio, user_group_ratio));
+    }
     return joinBillingSummary(parts);
   }
 
   if (modelPrice !== -1) {
+    if (hideGroupRatio) {
+      return i18next.t('模型价格 {{symbol}}{{price}} / 次', {
+        symbol: symbol,
+        price: (modelPrice * rate).toFixed(6),
+      });
+    }
     return i18next.t('模型价格 {{symbol}}{{price}}，{{ratioType}} {{ratio}}', {
       symbol: symbol,
       price: (modelPrice * rate).toFixed(6),
@@ -3266,11 +3280,15 @@ export function renderClaudeLogContent(opts) {
       i18next.t('输出倍率 {{completionRatio}}', { completionRatio }),
       i18next.t('缓存倍率 {{cacheRatio}}', { cacheRatio }),
       cacheCreationPart,
-      i18next.t('{{ratioType}} {{ratio}}', {
-        ratioType: ratioLabel,
-        ratio: groupRatio,
-      }),
     ];
+    if (!hideGroupRatio) {
+      parts.push(
+        i18next.t('{{ratioType}} {{ratio}}', {
+          ratioType: ratioLabel,
+          ratio: groupRatio,
+        }),
+      );
+    }
 
     return parts.join('，');
   }
