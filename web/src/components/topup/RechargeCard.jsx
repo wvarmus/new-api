@@ -22,7 +22,6 @@ import { Typography, Button, Banner, Form, Spin } from '@douyinfe/semi-ui';
 import { SiAlipay, SiWechat } from 'react-icons/si';
 import {
   BarChart2,
-  Coins,
   CreditCard,
   Ticket,
   TrendingUp,
@@ -30,8 +29,6 @@ import {
 } from 'lucide-react';
 import { IconGift } from '@douyinfe/semi-icons';
 import { getCurrencyConfig } from '../../helpers/render';
-
-const { Text } = Typography;
 
 const RechargeCard = ({
   t,
@@ -288,7 +285,6 @@ const RechargeCard = ({
                 }}
               >
                 <span className='wallet-preset-top'>
-                  <Coins size={17} />
                   <strong>
                     {formatLargeNumber
                       ? formatLargeNumber(displayValue)
@@ -470,11 +466,6 @@ const RechargeCard = ({
               <Typography.Title heading={3} className='wallet-page-title'>
                 {t('钱包管理')}
               </Typography.Title>
-              <Text className='wallet-page-subtitle'>
-                {t(
-                  '管理账户余额、充值方式与兑换码，支付完成后可在账单中追踪状态。',
-                )}
-              </Text>
             </div>
           </div>
         </div>
@@ -502,7 +493,6 @@ const RechargeCard = ({
             </span>
             <div>
               <h2>{t('额度充值')}</h2>
-              <p>{t('选择支付方式和充值额度，确认后再进入支付确认。')}</p>
             </div>
           </div>
 
