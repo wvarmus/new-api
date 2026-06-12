@@ -205,7 +205,6 @@ const TopupHistoryCard = ({ t, refreshKey = 0 }) => {
         </span>
         <div>
           <h2>{t('充值账单')}</h2>
-          <p>{t('完整充值记录与支付状态')}</p>
         </div>
       </div>
 

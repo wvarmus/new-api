@@ -6704,9 +6704,10 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
   );
   display: flex;
   justify-content: center;
-  align-items: stretch;
-  overflow: hidden;
-  padding-bottom: 0;
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 24px;
 }
 
 .wallet-page-main {
@@ -6724,9 +6725,9 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 
 .wallet-page-shell {
   width: 100%;
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -6734,12 +6735,12 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 
 .wallet-lower-grid {
   min-width: 0;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
   gap: 18px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .wallet-overview-card,
@@ -6803,7 +6804,7 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 }
 
 .wallet-title-wrap {
-  gap: 14px;
+  gap: 12px;
 }
 
 .wallet-hero-icon,
@@ -6817,17 +6818,22 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 }
 
 .wallet-hero-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
   background: linear-gradient(135deg, #2563eb 0%, #6d5dfc 100%);
-  box-shadow: 0 18px 28px -20px rgba(37, 99, 235, 0.78);
+  box-shadow: 0 14px 24px -20px rgba(37, 99, 235, 0.78);
+}
+
+.wallet-hero-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .wallet-page-title.semi-typography {
   margin: 0 0 4px !important;
   color: #0f172a;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 850;
   line-height: 1.25;
   letter-spacing: 0;
@@ -6837,8 +6843,8 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
   display: block;
   max-width: 680px;
   color: #64748b;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .wallet-history-button.semi-button {
@@ -6920,7 +6926,8 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 }
 
 .wallet-payment-workspace-card {
-  height: 100%;
+  width: 100%;
+  height: auto;
   min-height: 0;
   gap: 0;
   background: linear-gradient(
@@ -7638,10 +7645,16 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
   height: 58px;
   border: 0 !important;
   border-radius: 16px !important;
-  background: linear-gradient(135deg, #2563eb 0%, #6d5dfc 100%) !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
   color: #ffffff !important;
   font-size: 17px;
   font-weight: 850;
+  box-shadow: 0 16px 28px -18px rgba(234, 88, 12, 0.86);
+}
+
+.wallet-recharge-submit-button.semi-button:hover,
+.wallet-recharge-submit-button.semi-button:focus-visible {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
 }
 
 .wallet-direct-pay-modal .semi-modal-content {
@@ -7976,10 +7989,16 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
   flex: 0 0 56px;
   border: 0 !important;
   border-radius: 13px !important;
-  background: linear-gradient(135deg, #2563eb 0%, #6d5dfc 100%) !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
   color: #ffffff !important;
   font-size: 16px;
   font-weight: 850;
+  box-shadow: 0 14px 24px -18px rgba(234, 88, 12, 0.86);
+}
+
+.wallet-redeem-button.semi-button:hover,
+.wallet-redeem-button.semi-button:focus-visible {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
 }
 
 .wallet-redeem-link {
@@ -8379,9 +8398,9 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 
 .wallet-history-side-card {
   position: relative;
-  width: 860px;
+  width: 100%;
   max-width: 100%;
-  height: 100%;
+  height: auto;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -8401,7 +8420,7 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 }
 
 .wallet-history-side-card-admin {
-  width: 940px;
+  width: 100%;
 }
 
 .wallet-history-side-heading {
@@ -8413,14 +8432,19 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 
 .wallet-history-side-icon {
   flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 15px;
+  border-radius: 13px;
   background: #2563eb;
   color: #ffffff;
+}
+
+.wallet-history-side-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .wallet-history-side-heading h2 {
