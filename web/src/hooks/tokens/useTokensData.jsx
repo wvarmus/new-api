@@ -27,7 +27,6 @@ import {
   fetchTokenKey as fetchTokenKeyById,
   fetchTokenKeysBatch,
   getServerAddress,
-  encodeChannelConnectionString,
 } from '../../helpers/token';
 
 export const useTokensData = () => {
@@ -65,6 +64,7 @@ export const useTokensData = () => {
     searchKeyword: '',
     searchToken: '',
   };
+  const tokenConnectionUrl = getServerAddress();
 
   // Get form values helper function
   const getFormValues = () => {
@@ -198,11 +198,8 @@ export const useTokensData = () => {
     await copyText(`sk-${fullKey}`);
   };
 
-  const copyTokenConnectionString = async (record) => {
-    const fullKey = await fetchTokenKey(record);
-    const serverUrl = getServerAddress();
-    const connStr = encodeChannelConnectionString(`sk-${fullKey}`, serverUrl);
-    await copyText(connStr);
+  const copyTokenConnectionString = async () => {
+    await copyText(tokenConnectionUrl);
   };
 
   // Manage token function (delete, enable, disable)
@@ -424,6 +421,7 @@ export const useTokensData = () => {
     setShowKeys,
     resolvedTokenKeys,
     loadingTokenKeys,
+    tokenConnectionUrl,
 
     // Form state
     formApi,

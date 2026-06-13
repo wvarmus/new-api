@@ -20,7 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import {
   Button,
-  Dropdown,
   Space,
   Tag,
   AvatarGroup,
@@ -38,7 +37,11 @@ import {
   renderQuota,
   getModelCategories,
 } from '../../../helpers';
-import { IconCopy, IconEyeOpened, IconEyeClosed } from '@douyinfe/semi-icons';
+import {
+  IconCopy,
+  IconEyeOpened,
+  IconEyeClosed,
+} from '@douyinfe/semi-icons';
 
 // progress color helper
 const getProgressColor = (pct) => {
@@ -119,7 +122,6 @@ const renderTokenKey = (
   loadingTokenKeys,
   toggleTokenVisibility,
   copyTokenKey,
-  copyTokenConnectionString,
   t,
 ) => {
   const revealed = !!showKeys[record.id];
@@ -150,23 +152,7 @@ const renderTokenKey = (
                 await toggleTokenVisibility(record);
               }}
             />
-            <Dropdown
-              trigger='click'
-              position='bottomRight'
-              clickToHide
-              menu={[
-                {
-                  node: 'item',
-                  name: t('复制密钥'),
-                  onClick: () => copyTokenKey(record),
-                },
-                {
-                  node: 'item',
-                  name: t('复制连接信息'),
-                  onClick: () => copyTokenConnectionString(record),
-                },
-              ]}
-            >
+            <Tooltip content={t('复制密钥')} position='top'>
               <Button
                 theme='borderless'
                 size='small'
@@ -176,10 +162,39 @@ const renderTokenKey = (
                 aria-label='copy token key'
                 onClick={async (e) => {
                   e.stopPropagation();
+                  await copyTokenKey(record);
                 }}
               />
-            </Dropdown>
+            </Tooltip>
           </div>
+        }
+      />
+    </div>
+  );
+};
+
+const renderTokenLink = (tokenConnectionUrl, copyTokenConnectionString, t) => {
+  return (
+    <div className='w-[200px]'>
+      <Input
+        readOnly
+        value={tokenConnectionUrl || '-'}
+        size='small'
+        suffix={
+          <Tooltip content={t('复制链接')} position='top'>
+            <Button
+              theme='borderless'
+              size='small'
+              type='tertiary'
+              icon={<IconCopy />}
+              aria-label='copy token link'
+              disabled={!tokenConnectionUrl}
+              onClick={async (e) => {
+                e.stopPropagation();
+                await copyTokenConnectionString();
+              }}
+            />
+          </Tooltip>
         }
       />
     </div>
@@ -417,6 +432,7 @@ export const getTokensColumns = ({
   toggleTokenVisibility,
   copyTokenKey,
   copyTokenConnectionString,
+  tokenConnectionUrl,
   manageToken,
   setEditingToken,
   setShowEdit,
@@ -457,9 +473,14 @@ export const getTokensColumns = ({
           loadingTokenKeys,
           toggleTokenVisibility,
           copyTokenKey,
-          copyTokenConnectionString,
           t,
         ),
+    },
+    {
+      title: t('链接'),
+      key: 'token_link',
+      render: () =>
+        renderTokenLink(tokenConnectionUrl, copyTokenConnectionString, t),
     },
     {
       title: t('可用模型'),

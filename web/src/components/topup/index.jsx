@@ -51,7 +51,8 @@ const TopUp = () => {
   const [topUpLink, setTopUpLink] = useState(
     statusState?.status?.top_up_link || '',
   );
-  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusLoading, setStatusLoading] = useState(!statusState?.status);
+  const [topupInfoLoading, setTopupInfoLoading] = useState(true);
 
   const [enableWechatNativeTopUp, setEnableWechatNativeTopUp] = useState(false);
   const [enableAlipayTopUp, setEnableAlipayTopUp] = useState(false);
@@ -75,11 +76,6 @@ const TopUp = () => {
 
   const [presetAmounts, setPresetAmounts] = useState([]);
   const [selectedPreset, setSelectedPreset] = useState(null);
-
-  const [topupInfo, setTopupInfo] = useState({
-    amount_options: [],
-    discount: {},
-  });
 
   const confirmPayMethods = payMethods;
 
@@ -321,14 +317,13 @@ const TopUp = () => {
   };
 
   const getTopupInfo = async () => {
+    setTopupInfoLoading(true);
     try {
       const res = await API.get('/api/user/topup/info');
       const { data, success } = res.data;
       if (success) {
-        setTopupInfo({
-          amount_options: data.amount_options || [],
-          discount: data.discount || {},
-        });
+        const amountOptions = data.amount_options || [];
+        const discount = data.discount || {};
 
         let payMethods = data.pay_methods || [];
         try {
@@ -372,27 +367,27 @@ const TopUp = () => {
           setMinTopUp(minTopUpValue);
           setTopUpCount(minTopUpValue);
 
-          if (topupInfo.amount_options.length === 0) {
+          if (amountOptions.length > 0) {
+            const customPresets = amountOptions.map((amount) => ({
+              value: amount,
+              discount: discount?.[amount] || 1.0,
+            }));
+            setPresetAmounts(customPresets);
+          } else {
             setPresetAmounts(generatePresetAmounts(minTopUpValue));
           }
 
-          getAmount(minTopUpValue);
+          await getAmount(minTopUpValue);
         } catch (e) {
           setPayMethods([]);
-        }
-
-        if (data.amount_options && data.amount_options.length > 0) {
-          const customPresets = data.amount_options.map((amount) => ({
-            value: amount,
-            discount: data.discount?.[amount] || 1.0,
-          }));
-          setPresetAmounts(customPresets);
         }
       } else {
         showError(data || t('获取充值配置失败'));
       }
     } catch (error) {
       showError(t('获取充值配置异常'));
+    } finally {
+      setTopupInfoLoading(false);
     }
   };
 
@@ -517,6 +512,7 @@ const TopUp = () => {
           userState={userState}
           renderQuota={renderQuota}
           statusLoading={statusLoading}
+          topupInfoLoading={topupInfoLoading}
           historySlot={
             <TopupHistoryCard t={t} refreshKey={historyRefreshKey} />
           }

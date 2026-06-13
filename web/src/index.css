@@ -755,6 +755,29 @@ html.dark .sbg-variant-green {
   /* Chrome, Safari, Opera */
 }
 
+.token-beginner-guide-modal .semi-modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+
+.token-beginner-guide-modal .semi-modal-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.token-beginner-guide-modal .semi-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.32);
+  border-radius: 999px;
+}
+
+.token-beginner-guide-modal .semi-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.48);
+}
+
+.token-beginner-guide-modal .semi-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* 表格滚动条样式 */
 .semi-table-body::-webkit-scrollbar {
   width: 6px;
@@ -8064,6 +8087,10 @@ body[data-home-mode='dark'] #homepage .home-security-controls span {
 .wallet-loading-state {
   flex-direction: column;
   gap: 10px;
+}
+
+.wallet-payment-config-loading {
+  min-height: 420px;
 }
 
 .wallet-topup-banner.semi-banner {
