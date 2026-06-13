@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext, useRef, useMemo } from 'react';
 import {
   API,
   showError,
@@ -26,12 +26,16 @@ import {
   renderGroupOption,
   getCurrencyConfig,
   getModelCategories,
+  getLobeHubIcon,
   selectFilter,
+  calculateModelPrice,
+  getModelPriceItems,
 } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
   displayAmountToQuota,
 } from '../../../../helpers/quota';
+import { useModelPricingData } from '../../../../hooks/model-pricing/useModelPricingData';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import {
   Button,
@@ -46,6 +50,7 @@ import {
   Col,
   Row,
   InputNumber,
+  Modal,
 } from '@douyinfe/semi-ui';
 import {
   IconCreditCard,
@@ -53,6 +58,7 @@ import {
   IconSave,
   IconClose,
   IconKey,
+  IconHelpCircle,
 } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../../../context/Status';
@@ -68,7 +74,24 @@ const EditTokenModal = (props) => {
   const [models, setModels] = useState([]);
   const [groups, setGroups] = useState([]);
   const [showQuotaInput, setShowQuotaInput] = useState(false);
+  const [beginnerGuideVisible, setBeginnerGuideVisible] = useState(false);
+  const [beginnerVendor, setBeginnerVendor] = useState('');
+  const [beginnerModel, setBeginnerModel] = useState('');
+  const [recommendedGroup, setRecommendedGroup] = useState('');
+  const {
+    models: pricingModels,
+    vendorsMap: pricingVendorsMap,
+    groupRatio: pricingGroupRatio,
+    usableGroup: pricingUsableGroup,
+    currency: pricingCurrency,
+    siteDisplayType: pricingSiteDisplayType,
+    tokenUnit: pricingTokenUnit,
+    displayPrice: pricingDisplayPrice,
+    loading: pricingLoading,
+    refresh: refreshPricingData,
+  } = useModelPricingData();
   const isEdit = props.editingToken.id !== undefined;
+  const unknownVendorKey = '__unknown__';
 
   const getInitValues = () => ({
     name: '',
@@ -83,6 +106,297 @@ const EditTokenModal = (props) => {
     cross_group_retry: false,
     tokenCount: 1,
   });
+
+  const getModelName = (model) => model?.model_name || model?.value || '';
+
+  const getVendorKeyForModel = (model) => {
+    if (
+      model?.vendor_id !== undefined &&
+      model?.vendor_id !== null &&
+      model?.vendor_id !== ''
+    ) {
+      return String(model.vendor_id);
+    }
+    return unknownVendorKey;
+  };
+
+  const beginnerVendorOptions = useMemo(() => {
+    const vendorCounts = {};
+    const vendorDetails = {};
+
+    Object.values(pricingVendorsMap || {}).forEach((vendor) => {
+      if (vendor?.id === undefined || vendor?.id === null) return;
+      const vendorKey = String(vendor.id);
+      vendorDetails[vendorKey] = {
+        ...vendor,
+        key: vendorKey,
+      };
+    });
+
+    pricingModels.forEach((model) => {
+      const vendorKey = getVendorKeyForModel(model);
+      vendorCounts[vendorKey] = (vendorCounts[vendorKey] || 0) + 1;
+
+      if (vendorKey !== unknownVendorKey && !vendorDetails[vendorKey]) {
+        vendorDetails[vendorKey] = {
+          id: vendorKey,
+          key: vendorKey,
+          name: model.vendor_name || vendorKey,
+          icon: model.vendor_icon || model.icon || '',
+          description: model.vendor_description || '',
+        };
+      }
+    });
+
+    const options = Object.entries(vendorCounts)
+      .filter(([vendorKey]) => vendorKey !== unknownVendorKey)
+      .map(([vendorKey, count]) => ({
+        ...(vendorDetails[vendorKey] || {}),
+        id: vendorDetails[vendorKey]?.id || vendorKey,
+        key: vendorKey,
+        name: vendorDetails[vendorKey]?.name || vendorKey,
+        icon: vendorDetails[vendorKey]?.icon || '',
+        description: vendorDetails[vendorKey]?.description || '',
+        count,
+      }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+    if (vendorCounts[unknownVendorKey] > 0) {
+      options.push({
+        id: unknownVendorKey,
+        key: unknownVendorKey,
+        name: t('未知供应商'),
+        icon: '',
+        description: '',
+        count: vendorCounts[unknownVendorKey],
+      });
+    }
+
+    return options;
+  }, [pricingModels, pricingVendorsMap, t]);
+
+  const beginnerModelOptions = useMemo(() => {
+    if (!beginnerVendor) return [];
+    return pricingModels
+      .filter((model) => getVendorKeyForModel(model) === beginnerVendor)
+      .map((model) => {
+        const modelName = getModelName(model);
+        return {
+          ...model,
+          value: modelName,
+        };
+      })
+      .sort((a, b) => a.value.localeCompare(b.value));
+  }, [beginnerVendor, pricingModels]);
+
+  const getAvailableGroupsForModel = (modelName) => {
+    const pricingModel = pricingModels.find(
+      (model) => getModelName(model) === modelName,
+    );
+    if (!pricingModel) return [];
+
+    const availableGroups = Object.keys(pricingUsableGroup || {})
+      .filter((group) => group !== '')
+      .filter((group) => group !== 'auto');
+    const enabledGroups = Array.isArray(pricingModel.enable_groups)
+      ? pricingModel.enable_groups
+      : [];
+
+    return availableGroups.filter((group) => enabledGroups.includes(group));
+  };
+
+  const getRecommendedGroup = (modelName) => {
+    const candidates = getAvailableGroupsForModel(modelName);
+    if (candidates.length === 0) return '';
+
+    const currentGroup = formApiRef.current?.getValues?.()?.group;
+    if (currentGroup && candidates.includes(currentGroup)) {
+      return currentGroup;
+    }
+
+    return candidates[0];
+  };
+
+  const selectedBeginnerPricingModel = useMemo(
+    () =>
+      pricingModels.find((model) => getModelName(model) === beginnerModel) ||
+      null,
+    [beginnerModel, pricingModels],
+  );
+
+  const getBillingType = (model) => {
+    if (model?.billing_mode === 'tiered_expr') return t('动态计费');
+    if (model?.quota_type === 0) return t('按量计费');
+    if (model?.quota_type === 1) return t('按次计费');
+    return '-';
+  };
+
+  const getBillingColor = (billingType) => {
+    if (billingType === t('按量计费')) return 'blue';
+    if (billingType === t('按次计费')) return 'teal';
+    if (billingType === t('动态计费')) return 'amber';
+    return 'grey';
+  };
+
+  const beginnerGroupOptions = useMemo(() => {
+    if (!beginnerModel || !selectedBeginnerPricingModel) return [];
+
+    const billingType = getBillingType(selectedBeginnerPricingModel);
+    return getAvailableGroupsForModel(beginnerModel).map((group) => {
+      const priceData = calculateModelPrice({
+        record: selectedBeginnerPricingModel,
+        selectedGroup: group,
+        groupRatio: pricingGroupRatio,
+        tokenUnit: pricingTokenUnit,
+        displayPrice: pricingDisplayPrice,
+        currency: pricingCurrency,
+        quotaDisplayType: pricingSiteDisplayType,
+      });
+      const priceItems = getModelPriceItems(
+        priceData,
+        t,
+        pricingSiteDisplayType,
+      );
+
+      return {
+        group,
+        description:
+          pricingUsableGroup?.[group] ||
+          t('暂无分组描述'),
+        billingType,
+        billingColor: getBillingColor(billingType),
+        priceItems,
+      };
+    });
+  }, [
+    beginnerModel,
+    selectedBeginnerPricingModel,
+    pricingGroupRatio,
+    pricingTokenUnit,
+    pricingDisplayPrice,
+    pricingCurrency,
+    pricingSiteDisplayType,
+    pricingUsableGroup,
+    t,
+  ]);
+
+  const renderBeginnerPriceValue = (item) => {
+    if (item.isDynamic) {
+      return <span className='model-pricing-table-muted'>{t('动态')}</span>;
+    }
+
+    return (
+      <span className='model-pricing-table-price'>
+        {item.value}
+        <small>{item.suffix}</small>
+      </span>
+    );
+  };
+
+  const getBeginnerPriceItem = (items, keys) => {
+    const keyList = Array.isArray(keys) ? keys : [keys];
+    return items.find((item) => keyList.includes(item.key));
+  };
+
+  const renderBeginnerPriceCell = (items, keys, emptyText = '-') => {
+    if (items.length === 1 && items[0].isDynamic) {
+      return <span className='model-pricing-table-muted'>{t('动态')}</span>;
+    }
+
+    const item = getBeginnerPriceItem(items, keys);
+    if (!item) {
+      return <span className='model-pricing-table-muted'>{emptyText}</span>;
+    }
+
+    return renderBeginnerPriceValue(item);
+  };
+
+  const renderBeginnerUnsupportedCell = () => (
+    <span className='model-pricing-table-muted'>-</span>
+  );
+
+  const getBeginnerPrimaryPriceHeader = () => {
+    if (selectedBeginnerPricingModel?.quota_type === 1) return t('价格');
+    if (pricingSiteDisplayType === 'TOKENS') return t('输入倍率');
+    return t('输入/M');
+  };
+
+  const getBeginnerOutputPriceHeader = () => {
+    if (pricingSiteDisplayType === 'TOKENS') return t('输出倍率');
+    return t('输出/M');
+  };
+
+  const getBeginnerCacheReadHeader = () => {
+    if (pricingSiteDisplayType === 'TOKENS') return t('缓存读取倍率');
+    return t('缓存读取/M');
+  };
+
+  const getBeginnerCacheCreateHeader = () => {
+    if (pricingSiteDisplayType === 'TOKENS') return t('缓存创建倍率');
+    return t('缓存创建/M');
+  };
+
+  const getBeginnerGroupPriceRows = (option) => {
+    if (selectedBeginnerPricingModel?.quota_type === 1) {
+      return [
+        {
+          key: 'fixed',
+          label: getBeginnerPrimaryPriceHeader(),
+          value: renderBeginnerPriceCell(option.priceItems, 'fixed'),
+        },
+        {
+          key: 'output',
+          label: getBeginnerOutputPriceHeader(),
+          value: renderBeginnerUnsupportedCell(),
+        },
+        {
+          key: 'cache',
+          label: getBeginnerCacheReadHeader(),
+          value: renderBeginnerUnsupportedCell(),
+        },
+        {
+          key: 'create-cache',
+          label: getBeginnerCacheCreateHeader(),
+          value: renderBeginnerUnsupportedCell(),
+        },
+      ];
+    }
+
+    return [
+      {
+        key: 'input',
+        label: getBeginnerPrimaryPriceHeader(),
+        value: renderBeginnerPriceCell(option.priceItems, [
+          'input',
+          'input-ratio',
+        ]),
+      },
+      {
+        key: 'completion',
+        label: getBeginnerOutputPriceHeader(),
+        value: renderBeginnerPriceCell(option.priceItems, [
+          'completion',
+          'completion-ratio',
+        ]),
+      },
+      {
+        key: 'cache',
+        label: getBeginnerCacheReadHeader(),
+        value: renderBeginnerPriceCell(option.priceItems, [
+          'cache',
+          'cache-ratio',
+        ]),
+      },
+      {
+        key: 'create-cache',
+        label: getBeginnerCacheCreateHeader(),
+        value: renderBeginnerPriceCell(option.priceItems, [
+          'create-cache',
+          'create-cache-ratio',
+        ]),
+      },
+    ];
+  };
 
   const handleCancel = () => {
     props.handleClose();
@@ -155,6 +469,61 @@ const EditTokenModal = (props) => {
     }
   };
 
+  const openBeginnerGuide = () => {
+    setBeginnerVendor('');
+    setBeginnerModel('');
+    setRecommendedGroup('');
+    setBeginnerGuideVisible(true);
+    if (!pricingLoading && pricingModels.length === 0) {
+      void refreshPricingData?.();
+    }
+  };
+
+  const applyRecommendedGroup = () => {
+    if (!recommendedGroup) {
+      showError(t('请先选择模型'));
+      return;
+    }
+    formApiRef.current?.setValue('group', recommendedGroup);
+    setBeginnerGuideVisible(false);
+    showSuccess(t('已为你选择推荐分组'));
+  };
+
+  const validateRequiredGroup = (_rule, value) => {
+    if (value === undefined || value === null || value === '') {
+      return Promise.reject(t('请选择令牌分组'));
+    }
+    return Promise.resolve();
+  };
+
+  const renderGroupLabel = () => (
+    <div className='flex w-full min-w-0 items-center justify-between gap-2'>
+      <span className='flex shrink-0 items-center gap-0.5'>
+        <span>{t('令牌分组')}</span>
+        <span style={{ color: 'var(--semi-color-danger)' }}>*</span>
+      </span>
+      {!isEdit && (
+        <Button
+          theme='light'
+          type='primary'
+          size='small'
+          className='!px-2'
+          icon={<IconHelpCircle />}
+          htmlType='button'
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openBeginnerGuide();
+          }}
+        >
+          <span className='whitespace-nowrap text-xs'>
+            {t('不知道选什么分组➔')} {t('新手入口')}
+          </span>
+        </Button>
+      )}
+    </div>
+  );
+
   const loadToken = async () => {
     setLoading(true);
     let res = await API.get(`/api/token/${props.editingToken.id}`);
@@ -201,6 +570,12 @@ const EditTokenModal = (props) => {
       formApiRef.current?.reset();
     }
   }, [props.visiable, props.editingToken.id]);
+
+  useEffect(() => {
+    if (beginnerModel) {
+      setRecommendedGroup(getRecommendedGroup(beginnerModel));
+    }
+  }, [beginnerModel, pricingModels, groups, pricingGroupRatio]);
 
   const generateRandomSuffix = () => {
     const characters =
@@ -385,8 +760,9 @@ const EditTokenModal = (props) => {
                     {groups.length > 0 ? (
                       <Form.Select
                         field='group'
-                        label={t('令牌分组')}
-                        placeholder={t('令牌分组，默认为用户的分组')}
+                        label={renderGroupLabel()}
+                        placeholder={t('请选择令牌分组')}
+                        rules={[{ validator: validateRequiredGroup }]}
                         optionList={groups}
                         renderOptionItem={renderGroupOption}
                         filter={(input, option) => {
@@ -408,7 +784,7 @@ const EditTokenModal = (props) => {
                       <Form.Select
                         placeholder={t('管理员未设置用户可选分组')}
                         disabled
-                        label={t('令牌分组')}
+                        label={renderGroupLabel()}
                         style={{ width: '100%' }}
                       />
                     )}
@@ -649,6 +1025,232 @@ const EditTokenModal = (props) => {
           )}
         </Form>
       </Spin>
+      <Modal
+        className='token-beginner-guide-modal'
+        title={t('新手分组推荐')}
+        visible={beginnerGuideVisible}
+        onCancel={() => setBeginnerGuideVisible(false)}
+        onOk={applyRecommendedGroup}
+        okText={t('使用推荐分组')}
+        cancelText={t('取消')}
+        width={isMobile ? 'calc(100vw - 24px)' : 860}
+        okButtonProps={{ disabled: !recommendedGroup }}
+        bodyStyle={{
+          maxHeight: isMobile
+            ? 'calc(100dvh - 140px)'
+            : 'min(760px, calc(100dvh - 160px))',
+          overflowY: 'auto',
+          marginRight: isMobile ? -6 : -10,
+          paddingRight: isMobile ? 16 : 22,
+          scrollbarGutter: 'stable',
+        }}
+      >
+        <Spin spinning={pricingLoading}>
+          <div className='space-y-4'>
+            <div>
+              <div className='mb-2 flex items-center gap-1.5 text-sm font-medium'>
+                <span aria-hidden='true'>🏢</span>
+                <span>{t('供应商')}</span>
+              </div>
+              <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
+                {beginnerVendorOptions.length > 0 ? (
+                  beginnerVendorOptions.map((vendor) => {
+                    const active = beginnerVendor === vendor.key;
+                    return (
+                      <button
+                        key={vendor.key}
+                        type='button'
+                        className='flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors'
+                        style={{
+                          border: active
+                            ? '1px solid #2f6fed'
+                            : '1px solid #e6edf5',
+                          background: active
+                            ? '#f1f7ff'
+                            : '#ffffff',
+                          boxShadow: active
+                            ? '0 10px 24px rgba(47, 111, 237, 0.12)'
+                            : '0 6px 16px rgba(15, 23, 42, 0.04)',
+                        }}
+                        onClick={() => {
+                          setBeginnerVendor(vendor.key);
+                          setBeginnerModel('');
+                          setRecommendedGroup('');
+                        }}
+                      >
+                        <span className='flex min-w-0 items-center gap-2'>
+                          {getLobeHubIcon(vendor.icon || 'Layers', 18)}
+                          <span className='truncate text-sm font-medium'>
+                            {vendor.name}
+                          </span>
+                        </span>
+                        <Tag size='small' color='blue' shape='circle'>
+                          {vendor.count}
+                        </Tag>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div
+                    className='rounded-lg px-3 py-4 text-sm sm:col-span-3'
+                    style={{
+                      color: '#64748b',
+                      background: '#ffffff',
+                      border: '1px solid #e6edf5',
+                    }}
+                  >
+                    {t('暂无可用供应商')}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className='mb-2 flex items-center gap-1.5 text-sm font-medium'>
+                <span aria-hidden='true'>🤖</span>
+                <span>{t('模型')}</span>
+              </div>
+              <div>
+                {!beginnerVendor ? (
+                  <Text type='tertiary'>{t('请先选择供应商')}</Text>
+                ) : beginnerModelOptions.length > 0 ? (
+                  <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
+                    {beginnerModelOptions.map((model) => {
+                      const modelName = getModelName(model);
+                      const active = beginnerModel === modelName;
+                      return (
+                        <button
+                          key={modelName}
+                          type='button'
+                          className='flex min-h-[44px] w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left transition-colors'
+                          style={{
+                            border: active
+                              ? '1px solid #2f6fed'
+                              : '1px solid #e6edf5',
+                            background: active
+                              ? '#f1f7ff'
+                              : '#ffffff',
+                            boxShadow: active
+                              ? '0 8px 20px rgba(47, 111, 237, 0.1)'
+                              : '0 4px 12px rgba(15, 23, 42, 0.03)',
+                          }}
+                          onClick={() => {
+                            setBeginnerModel(modelName);
+                            setRecommendedGroup(getRecommendedGroup(modelName));
+                          }}
+                        >
+                          <span className='flex min-w-0 items-center gap-2'>
+                            {getLobeHubIcon(
+                              model.icon || model.vendor_icon || 'Layers',
+                              16,
+                            )}
+                            <span className='truncate text-sm'>{modelName}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Text type='tertiary'>{t('该供应商暂无可用模型')}</Text>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className='mb-2 flex items-center gap-1.5 text-sm font-medium'>
+                <span aria-hidden='true'>🎯</span>
+                <span>{t('可选分组')}</span>
+              </div>
+              {beginnerGroupOptions.length > 0 ? (
+                <div className='grid grid-cols-1 gap-3'>
+                  {beginnerGroupOptions.map((option) => {
+                    const active = recommendedGroup === option.group;
+                    return (
+                      <button
+                        key={option.group}
+                        type='button'
+                        className='w-full rounded-lg px-4 py-3 text-left transition-colors'
+                        style={{
+                          background: active
+                            ? '#f1f7ff'
+                            : '#ffffff',
+                          border: active
+                            ? '1px solid #2f6fed'
+                            : '1px solid #e6edf5',
+                          boxShadow: active
+                            ? '0 10px 28px rgba(47, 111, 237, 0.12)'
+                            : '0 6px 18px rgba(15, 23, 42, 0.04)',
+                        }}
+                        onClick={() => setRecommendedGroup(option.group)}
+                      >
+                        <div className='flex flex-wrap items-center justify-between gap-2'>
+                          <Text strong className='text-base'>
+                            {option.group}
+                          </Text>
+                          <Space wrap>
+                            {active && (
+                              <Tag color='blue' size='small' shape='circle'>
+                                {t('已选择')}
+                              </Tag>
+                            )}
+                            <Tag
+                              color={option.billingColor}
+                              size='small'
+                              shape='circle'
+                            >
+                              {option.billingType}
+                            </Tag>
+                          </Space>
+                        </div>
+                        <div
+                          className='mt-2 text-sm leading-6'
+                          style={{ color: '#475569' }}
+                        >
+                          {option.description}
+                        </div>
+                        {option.priceItems.length > 0 ? (
+                          <div className='mt-3 grid grid-cols-1 gap-2 sm:grid-cols-4'>
+                            {getBeginnerGroupPriceRows(option).map((item) => (
+                              <div
+                                key={item.key}
+                                className='rounded-md px-3 py-2'
+                                style={{
+                                  background: '#ffffff',
+                                  border: '1px solid #e6edf5',
+                                  boxShadow:
+                                    'inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                                }}
+                              >
+                                <div
+                                  className='mb-1 truncate text-xs'
+                                  style={{ color: '#64748b' }}
+                                >
+                                  {item.label}
+                                </div>
+                                <div className='break-all'>
+                                  {item.value}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className='mt-2'>
+                            <Text type='tertiary'>{t('暂无价格信息')}</Text>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Text type='tertiary'>
+                  {beginnerModel
+                    ? t('当前模型没有匹配到可用分组')
+                    : t('选择模型后显示推荐分组')}
+                </Text>
+              )}
+            </div>
+          </div>
+        </Spin>
+      </Modal>
     </SideSheet>
   );
 };

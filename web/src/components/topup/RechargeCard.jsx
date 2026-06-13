@@ -59,6 +59,7 @@ const RechargeCard = ({
   userState,
   renderQuota,
   statusLoading,
+  topupInfoLoading,
   enableWechatNativeTopUp,
   enableAlipayTopUp,
   historySlot,
@@ -70,6 +71,7 @@ const RechargeCard = ({
   const hasUserSelectedPaymentTabRef = useRef(false);
   const [activePaymentTab, setActivePaymentTab] = useState('alipay');
   const regularPayMethods = payMethods || [];
+  const isWalletConfigLoading = statusLoading || topupInfoLoading;
 
   const isPaymentMethodEnabled = (payMethod) => {
     if (!payMethod?.type) return false;
@@ -156,6 +158,8 @@ const RechargeCard = ({
   };
 
   const paymentTabs = useMemo(() => {
+    if (topupInfoLoading) return [];
+
     const availablePaymentTabs = regularPayMethods
       .filter((method) => method?.type && method?.name)
       .filter((method) => isPaymentMethodEnabled(method))
@@ -178,15 +182,25 @@ const RechargeCard = ({
         disabled: false,
       },
     ];
-  }, [regularPayMethods, enableWechatNativeTopUp, enableAlipayTopUp, t]);
+  }, [
+    regularPayMethods,
+    enableWechatNativeTopUp,
+    enableAlipayTopUp,
+    topupInfoLoading,
+    t,
+  ]);
 
   const selectedPaymentTab =
-    paymentTabs.find((item) => item.key === activePaymentTab) ||
-    paymentTabs[0];
+    isWalletConfigLoading
+      ? null
+      : paymentTabs.find((item) => item.key === activePaymentTab) ||
+        paymentTabs[0];
   const selectedPaymentMethod = selectedPaymentTab?.method;
   const isRedeemPayment = selectedPaymentTab?.key === 'redeem';
 
   useEffect(() => {
+    if (isWalletConfigLoading || paymentTabs.length === 0) return;
+
     const preferredTab = paymentTabs.find((item) => item.method);
     if (
       !hasAppliedDefaultPaymentTabRef.current &&
@@ -226,7 +240,14 @@ const RechargeCard = ({
         setPayWay(fallbackTab.method.type);
       }
     }
-  }, [activePaymentTab, isRedeemPayment, payWay, paymentTabs, setPayWay]);
+  }, [
+    activePaymentTab,
+    isRedeemPayment,
+    isWalletConfigLoading,
+    payWay,
+    paymentTabs,
+    setPayWay,
+  ]);
 
   const handlePaymentTabClick = (tab) => {
     if (tab.disabled) return;
@@ -496,34 +517,45 @@ const RechargeCard = ({
             </div>
           </div>
 
-          <div
-            className='wallet-payment-tab-switch'
-            role='tablist'
-            style={{
-              gridTemplateColumns: `repeat(${paymentTabs.length}, minmax(0, 1fr))`,
-            }}
-          >
-            {paymentTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type='button'
-                role='tab'
-                aria-selected={selectedPaymentTab?.key === tab.key}
-                className={`wallet-payment-tab-${tab.tone || 'generic'} ${
-                  selectedPaymentTab?.key === tab.key ? 'active' : ''
-                }`}
-                disabled={tab.disabled}
-                onClick={() => handlePaymentTabClick(tab)}
+          {isWalletConfigLoading ? (
+            <div className='wallet-payment-tab-content'>
+              <div className='wallet-loading-state wallet-payment-config-loading'>
+                <Spin size='large' />
+                <span>{t('正在读取充值配置')}</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                className='wallet-payment-tab-switch'
+                role='tablist'
+                style={{
+                  gridTemplateColumns: `repeat(${paymentTabs.length}, minmax(0, 1fr))`,
+                }}
               >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                {paymentTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type='button'
+                    role='tab'
+                    aria-selected={selectedPaymentTab?.key === tab.key}
+                    className={`wallet-payment-tab-${tab.tone || 'generic'} ${
+                      selectedPaymentTab?.key === tab.key ? 'active' : ''
+                    }`}
+                    disabled={tab.disabled}
+                    onClick={() => handlePaymentTabClick(tab)}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-          <div className='wallet-payment-tab-content'>
-            {isRedeemPayment ? renderRedeemPanel() : renderRechargePanel()}
-          </div>
+              <div className='wallet-payment-tab-content'>
+                {isRedeemPayment ? renderRedeemPanel() : renderRechargePanel()}
+              </div>
+            </>
+          )}
         </section>
 
         {historySlot}
