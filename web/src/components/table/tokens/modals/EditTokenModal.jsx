@@ -504,10 +504,10 @@ const EditTokenModal = (props) => {
       </span>
       {!isEdit && (
         <Button
-          theme='light'
-          type='primary'
+          theme='solid'
+          type='danger'
           size='small'
-          className='!px-2'
+          className='!px-2 !text-white'
           icon={<IconHelpCircle />}
           htmlType='button'
           onClick={(event) => {
