@@ -175,19 +175,19 @@ const renderTokenKey = (
 
 const renderTokenLink = (tokenConnectionUrl, copyTokenConnectionString, t) => {
   return (
-    <div className='w-[200px]'>
+    <div className='w-[168px]'>
       <Input
         readOnly
         value={tokenConnectionUrl || '-'}
         size='small'
         suffix={
-          <Tooltip content={t('复制链接')} position='top'>
+          <Tooltip content={t('复制API地址')} position='top'>
             <Button
               theme='borderless'
               size='small'
               type='tertiary'
               icon={<IconCopy />}
-              aria-label='copy token link'
+              aria-label='copy token API address'
               disabled={!tokenConnectionUrl}
               onClick={async (e) => {
                 e.stopPropagation();
@@ -477,7 +477,7 @@ export const getTokensColumns = ({
         ),
     },
     {
-      title: t('链接'),
+      title: t('API地址'),
       key: 'token_link',
       render: () =>
         renderTokenLink(tokenConnectionUrl, copyTokenConnectionString, t),

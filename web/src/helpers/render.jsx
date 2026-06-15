@@ -1319,8 +1319,35 @@ function buildBillingPriceText(
   });
 }
 
+function stripGroupRatioExpression(line) {
+  if (typeof line !== 'string') {
+    return line;
+  }
+  const ratioLabel = '(?:分组倍率|专属倍率)';
+  const ratioValue = '[-+]?\\d+(?:\\.\\d+)?x?';
+  return line
+    .replace(
+      new RegExp(`\\s*\\*\\s*${ratioLabel}\\s*[:：]?\\s*${ratioValue}`, 'g'),
+      '',
+    )
+    .replace(
+      new RegExp(
+        `(?:^|[，,]\\s*)${ratioLabel}\\s*[:：]?\\s*${ratioValue}`,
+        'g',
+      ),
+      '',
+    )
+    .replace(/\s{2,}/g, ' ')
+    .replace(/（\s+/g, '（')
+    .replace(/\(\s+/g, '(')
+    .trim();
+}
+
 function renderBillingArticle(lines, { showReferenceNote = true } = {}) {
-  const articleLines = lines.filter(Boolean);
+  const articleLines = lines
+    .filter(Boolean)
+    .map(stripGroupRatioExpression)
+    .filter(Boolean);
 
   if (showReferenceNote) {
     articleLines.push(buildBillingText('仅供参考，以实际扣费为准'));
@@ -1375,12 +1402,7 @@ function renderPriceSimpleCore({
     hasSplitCacheCreation && cacheCreationTokens1h > 0;
 
   if (outputMode === 'segments') {
-    const segments = [
-      {
-        tone: 'primary',
-        text: getGroupRatioText(groupRatio, user_group_ratio),
-      },
-    ];
+    const segments = [];
 
     if (modelPrice !== -1) {
       segments.push({
@@ -2378,12 +2400,7 @@ export function renderTieredModelPriceSimple(opts) {
   const tier = tiers.find((t) => t.label === matchedTier) || tiers[0];
 
   if (outputMode === 'segments') {
-    const segments = [
-      {
-        tone: 'primary',
-        text: getGroupRatioText(groupRatio, user_group_ratio),
-      },
-    ];
+    const segments = [];
 
     if (tier && isPriceDisplayMode(displayMode)) {
       const priceSegments = BILLING_VARS.map((v) => [v.field, v.shortLabel]);
