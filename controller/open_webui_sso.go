@@ -52,8 +52,7 @@ type openWebUISSOClaims struct {
 }
 
 type openWebUIGroup struct {
-	Desc  string `json:"desc"`
-	Ratio any    `json:"ratio"`
+	Desc string `json:"desc"`
 }
 
 type openWebUIUser struct {
@@ -232,16 +231,14 @@ func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[stri
 	}
 	groups := make(map[string]openWebUIGroup, len(usableGroups)+1)
 	groups[""] = openWebUIGroup{
-		Desc:  openWebUIDefaultTokenGroupDesc,
-		Ratio: service.GetUserGroupRatio(user.Group, user.Group),
+		Desc: openWebUIDefaultTokenGroupDesc,
 	}
 
 	groupRatios := ratio_setting.GetGroupRatioCopy()
 	for groupID, desc := range usableGroups {
 		if groupID == "auto" {
 			groups[groupID] = openWebUIGroup{
-				Desc:  setting.GetUsableGroupDescription("auto"),
-				Ratio: "自动",
+				Desc: setting.GetUsableGroupDescription("auto"),
 			}
 			continue
 		}
@@ -251,8 +248,7 @@ func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[stri
 		}
 
 		groups[groupID] = openWebUIGroup{
-			Desc:  desc,
-			Ratio: service.GetUserGroupRatio(user.Group, groupID),
+			Desc: desc,
 		}
 	}
 	return groups

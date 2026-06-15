@@ -56,16 +56,6 @@ const colors = [
   'yellow',
 ];
 
-function formatRatio(ratio) {
-  if (ratio === undefined || ratio === null) {
-    return '-';
-  }
-  if (typeof ratio === 'number') {
-    return ratio.toFixed(4);
-  }
-  return String(ratio);
-}
-
 function buildChannelAffinityTooltip(affinity, t) {
   if (!affinity) {
     return null;
@@ -376,20 +366,18 @@ function normalizeDetailText(detail) {
     .replace(/\r\n/g, '\n');
 }
 
-function getUsageLogGroupSummary(groupRatio, userGroupRatio, t) {
-  const parsedUserGroupRatio = Number(userGroupRatio);
-  const useUserGroupRatio =
-    Number.isFinite(parsedUserGroupRatio) && parsedUserGroupRatio !== -1;
-  const ratio = useUserGroupRatio ? userGroupRatio : groupRatio;
-  if (ratio === undefined || ratio === null || ratio === '') {
-    return '';
-  }
-  return `${useUserGroupRatio ? t('专属倍率') : t('分组')} ${formatRatio(ratio)}x`;
+function isGroupRatioSegment(segment) {
+  const text = String(segment?.text || '').trim();
+  return /^(?:分组|分组倍率|专属倍率)\s*[:：]?\s*[-+]?\d+(?:\.\d+)?x?$/.test(
+    text,
+  );
 }
 
 function renderCompactDetailSummary(summarySegments) {
   const segments = Array.isArray(summarySegments)
-    ? summarySegments.filter((segment) => segment?.text)
+    ? summarySegments.filter(
+        (segment) => segment?.text && !isGroupRatioSegment(segment),
+      )
     : [];
   if (!segments.length) {
     return null;
@@ -443,14 +431,8 @@ function getUsageLogDetailSummary(record, text, billingDisplayMode, t) {
     Boolean(other?.violation_fee_marker)
   ) {
     const feeQuota = other?.fee_quota ?? record?.quota;
-    const groupText = getUsageLogGroupSummary(
-      other?.group_ratio,
-      other?.user_group_ratio,
-      t,
-    );
     return {
       segments: [
-        groupText ? { text: groupText, tone: 'primary' } : null,
         { text: t('违规扣费'), tone: 'primary' },
         {
           text: `${t('扣费')}：${renderQuota(feeQuota, 6)}`,
