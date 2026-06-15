@@ -133,7 +133,7 @@ const renderTokenKey = (
   const displayedKey = keyValue ? `sk-${keyValue}` : '';
 
   return (
-    <div className='w-[360px]'>
+    <div className='w-[200px]'>
       <Input
         readOnly
         value={displayedKey}
