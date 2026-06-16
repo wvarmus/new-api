@@ -42,7 +42,7 @@ func InitOptionMap() {
 	common.OptionMap["LinuxDOOAuthEnabled"] = strconv.FormatBool(common.LinuxDOOAuthEnabled)
 	common.OptionMap["TelegramOAuthEnabled"] = strconv.FormatBool(common.TelegramOAuthEnabled)
 	common.OptionMap["WeChatAuthEnabled"] = strconv.FormatBool(common.WeChatAuthEnabled)
-	common.OptionMap["TurnstileCheckEnabled"] = strconv.FormatBool(common.TurnstileCheckEnabled)
+	common.OptionMap["AliyunCaptchaEnabled"] = strconv.FormatBool(common.AliyunCaptchaEnabled)
 	common.OptionMap["RegisterEnabled"] = strconv.FormatBool(common.RegisterEnabled)
 	common.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(common.AutomaticDisableChannelEnabled)
 	common.OptionMap["AutomaticEnableChannelEnabled"] = strconv.FormatBool(common.AutomaticEnableChannelEnabled)
@@ -109,8 +109,11 @@ func InitOptionMap() {
 	common.OptionMap["WeChatServerAddress"] = ""
 	common.OptionMap["WeChatServerToken"] = ""
 	common.OptionMap["WeChatAccountQRCodeImageURL"] = ""
-	common.OptionMap["TurnstileSiteKey"] = ""
-	common.OptionMap["TurnstileSecretKey"] = ""
+	common.OptionMap["AliyunCaptchaAccessKeyId"] = ""
+	common.OptionMap["AliyunCaptchaAccessKeySecret"] = ""
+	common.OptionMap["AliyunCaptchaSceneId"] = ""
+	common.OptionMap["AliyunCaptchaPrefix"] = ""
+	common.OptionMap["AliyunCaptchaRegion"] = common.AliyunCaptchaRegion
 	common.OptionMap["QuotaForNewUser"] = strconv.Itoa(common.QuotaForNewUser)
 	common.OptionMap["QuotaRemindThreshold"] = strconv.Itoa(common.QuotaRemindThreshold)
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
@@ -240,8 +243,8 @@ func updateOptionMap(key string, value string) (err error) {
 			common.WeChatAuthEnabled = boolValue
 		case "TelegramOAuthEnabled":
 			common.TelegramOAuthEnabled = boolValue
-		case "TurnstileCheckEnabled":
-			common.TurnstileCheckEnabled = boolValue
+		case "AliyunCaptchaEnabled":
+			common.AliyunCaptchaEnabled = boolValue
 		case "RegisterEnabled":
 			common.RegisterEnabled = boolValue
 		case "EmailDomainRestrictionEnabled":
@@ -414,10 +417,16 @@ func updateOptionMap(key string, value string) (err error) {
 		common.TelegramBotToken = value
 	case "TelegramBotName":
 		common.TelegramBotName = value
-	case "TurnstileSiteKey":
-		common.TurnstileSiteKey = value
-	case "TurnstileSecretKey":
-		common.TurnstileSecretKey = value
+	case "AliyunCaptchaAccessKeyId":
+		common.AliyunCaptchaAccessKeyId = value
+	case "AliyunCaptchaAccessKeySecret":
+		common.AliyunCaptchaAccessKeySecret = value
+	case "AliyunCaptchaSceneId":
+		common.AliyunCaptchaSceneId = value
+	case "AliyunCaptchaPrefix":
+		common.AliyunCaptchaPrefix = value
+	case "AliyunCaptchaRegion":
+		common.AliyunCaptchaRegion = value
 	case "QuotaForNewUser":
 		common.QuotaForNewUser, _ = strconv.Atoi(value)
 	case "QuotaRemindThreshold":
