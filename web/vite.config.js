@@ -76,7 +76,6 @@ export default defineConfig({
             'react-fireworks',
             'react-telegram-login',
             'react-toastify',
-            'react-turnstile',
           ],
           i18n: [
             'i18next',
