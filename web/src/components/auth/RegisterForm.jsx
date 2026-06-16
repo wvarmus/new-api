@@ -34,7 +34,6 @@ import {
   onLinuxDOOAuthClicked,
   onOIDCClicked,
 } from '../../helpers';
-import Turnstile from 'react-turnstile';
 import { Button, Checkbox, Divider, Icon, Modal } from '@douyinfe/semi-ui';
 import {
   IconGithubLogo,
@@ -48,7 +47,6 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import AuthShell from './AuthShell';
 import { getAuthPageCopy } from './authShellContent';
-import SliderCaptcha from './SliderCaptcha';
 import {
   persistAllowedReturnTo,
   redirectAfterAuth,
@@ -93,9 +91,9 @@ const RegisterForm = () => {
   const { username, password, password2 } = inputs;
   const [, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [aliyunCaptchaEnabled, setAliyunCaptchaEnabled] = useState(false);
+  const [aliyunCaptchaToken, setAliyunCaptchaToken] = useState('');
+  const aliyunCaptchaContainerRef = useRef(null);
   const [showWeChatLoginModal, setShowWeChatLoginModal] = useState(false);
   const [wechatLoading, setWechatLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
@@ -111,9 +109,6 @@ const RegisterForm = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasUserAgreement, setHasUserAgreement] = useState(false);
   const [hasPrivacyPolicy, setHasPrivacyPolicy] = useState(false);
-  const [sliderCaptchaResetSignal, setSliderCaptchaResetSignal] = useState(0);
-  const [sliderCaptchaModalVisible, setSliderCaptchaModalVisible] =
-    useState(false);
   const [githubButtonState, setGithubButtonState] = useState('idle');
   const [githubButtonDisabled, setGithubButtonDisabled] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
@@ -160,9 +155,8 @@ const RegisterForm = () => {
 
   useEffect(() => {
     setShowEmailVerification(!!status?.email_verification);
-    if (status?.turnstile_check) {
-      setTurnstileEnabled(true);
-      setTurnstileSiteKey(status.turnstile_site_key);
+    if (status?.aliyun_captcha_enabled) {
+      setAliyunCaptchaEnabled(true);
     }
     setHasUserAgreement(status?.user_agreement_enabled || false);
     setHasPrivacyPolicy(status?.privacy_policy_enabled || false);
@@ -189,9 +183,53 @@ const RegisterForm = () => {
     };
   }, []);
 
-  const ensureTurnstileReady = () => {
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！');
+  useEffect(() => {
+    if (!aliyunCaptchaEnabled) return;
+    const prefix = status?.aliyun_captcha_prefix || '';
+    const sceneId = status?.aliyun_captcha_scene_id || '';
+    const region = status?.aliyun_captcha_region || 'cn';
+    window.AliyunCaptchaConfig = { region, prefix };
+    const scriptId = 'aliyun-captcha-script';
+    if (document.getElementById(scriptId)) return;
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src =
+      'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
+    script.async = true;
+    script.onload = () => {
+      if (aliyunCaptchaContainerRef.current) {
+        const logoUrl = status?.logo || '';
+        window.initAliyunCaptcha({
+          SceneId: sceneId,
+          mode: 'embed',
+          element: '#aliyun-captcha-register',
+          button: '#aliyun-captcha-button-register',
+          captchaLogoImg: logoUrl || undefined,
+          success: (captchaVerifyParam) => {
+            setAliyunCaptchaToken(captchaVerifyParam);
+          },
+          fail: (result) => {
+            console.error('Aliyun captcha failed:', result);
+          },
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => {
+      const el = document.getElementById(scriptId);
+      if (el) el.remove();
+      delete window.AliyunCaptchaConfig;
+    };
+  }, [
+    aliyunCaptchaEnabled,
+    status?.aliyun_captcha_prefix,
+    status?.aliyun_captcha_scene_id,
+    status?.aliyun_captcha_region,
+  ]);
+
+  const ensureAliyunCaptchaReady = () => {
+    if (aliyunCaptchaEnabled && aliyunCaptchaToken === '') {
+      showInfo('请先完成验证码验证！');
       return false;
     }
     return true;
@@ -203,10 +241,6 @@ const RegisterForm = () => {
       return false;
     }
     return true;
-  };
-
-  const resetSliderCaptcha = () => {
-    setSliderCaptchaResetSignal((current) => current + 1);
   };
 
   const handleChange = (name, value) => {
@@ -223,9 +257,6 @@ const RegisterForm = () => {
   };
 
   const onSubmitWeChatVerificationCode = async () => {
-    if (!ensureTurnstileReady()) {
-      return;
-    }
     setWechatCodeSubmitLoading(true);
     try {
       const res = await API.get(
@@ -249,11 +280,12 @@ const RegisterForm = () => {
     }
   };
 
-  const submitRegister = async () => {
+  const submitRegister = async (captchaTokenOverride) => {
+    const captchaToken = captchaTokenOverride !== undefined ? captchaTokenOverride : aliyunCaptchaToken;
     setRegisterLoading(true);
     try {
       const res = await API.post(
-        `/api/user/register?turnstile=${turnstileToken}`,
+        `/api/user/register?captcha=${captchaToken}`,
         inputs,
       );
       const { success, message } = res.data;
@@ -263,11 +295,9 @@ const RegisterForm = () => {
         showSuccess('注册成功！');
       } else {
         showError(message);
-        resetSliderCaptcha();
       }
     } catch (error) {
       showError('注册失败，请重试');
-      resetSliderCaptcha();
     } finally {
       setRegisterLoading(false);
     }
@@ -286,27 +316,21 @@ const RegisterForm = () => {
     if (!username || !password) {
       return;
     }
-    if (!ensureTermsAccepted() || !ensureTurnstileReady()) {
+    if (!ensureTermsAccepted() || !ensureAliyunCaptchaReady()) {
       return;
     }
-    resetSliderCaptcha();
-    setSliderCaptchaModalVisible(true);
-  };
-
-  const handleSliderCaptchaVerified = () => {
-    setSliderCaptchaModalVisible(false);
     submitRegister();
   };
 
   const sendVerificationCode = async () => {
     if (inputs.email === '') return;
-    if (!ensureTurnstileReady()) {
+    if (!ensureAliyunCaptchaReady()) {
       return;
     }
     setVerificationCodeLoading(true);
     try {
       const res = await API.get(
-        `/api/verification?email=${encodeURIComponent(inputs.email)}&turnstile=${turnstileToken}`,
+        `/api/verification?email=${encodeURIComponent(inputs.email)}&captcha=${aliyunCaptchaToken}`,
       );
       const { success, message } = res.data;
       if (success) {
@@ -622,31 +646,6 @@ const RegisterForm = () => {
     );
   };
 
-  const renderSliderCaptchaModal = () => {
-    return (
-      <Modal
-        title={t('滑块验证码')}
-        visible={sliderCaptchaModalVisible}
-        footer={null}
-        width={380}
-        centered
-        maskClosable={!registerLoading}
-        onCancel={() => {
-          setSliderCaptchaModalVisible(false);
-          resetSliderCaptcha();
-        }}
-      >
-        <div className='pb-4'>
-          <SliderCaptcha
-            t={t}
-            onVerified={handleSliderCaptchaVerified}
-            resetSignal={sliderCaptchaResetSignal}
-          />
-        </div>
-      </Modal>
-    );
-  };
-
   return (
     <AuthShell mode='register'>
       <form className='space-y-5' onSubmit={handleSubmit}>
@@ -763,6 +762,19 @@ const RegisterForm = () => {
           </div>
         )}
 
+        {aliyunCaptchaEnabled && (
+          <div className='mt-4 w-full' style={{ '--aliyun-slide-width': '100%' }}>
+            <div
+              id='aliyun-captcha-register'
+              ref={aliyunCaptchaContainerRef}
+            />
+            <div
+              id='aliyun-captcha-button-register'
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
+
         {renderTerms()}
 
         <Button
@@ -780,17 +792,6 @@ const RegisterForm = () => {
 
       {renderOtherRegisterOptions()}
 
-      {turnstileEnabled && (
-        <div className='mt-6 flex justify-center'>
-          <Turnstile
-            sitekey={turnstileSiteKey}
-            onVerify={(token) => {
-              setTurnstileToken(token);
-            }}
-          />
-        </div>
-      )}
-
       <p className='auth-theme-switch-text mt-8 text-center text-sm'>
         {pageCopy.switchPrefix}{' '}
         <Link
@@ -802,7 +803,6 @@ const RegisterForm = () => {
       </p>
 
       {renderWeChatLoginModal()}
-      {renderSliderCaptchaModal()}
     </AuthShell>
   );
 };

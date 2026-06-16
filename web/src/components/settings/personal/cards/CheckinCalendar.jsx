@@ -36,14 +36,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import Turnstile from 'react-turnstile';
 import { API, showError, showSuccess, renderQuota } from '../../../../helpers';
 
-const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
+const CheckinCalendar = ({ t, status, aliyunCaptchaEnabled, aliyunCaptchaToken }) => {
   const [loading, setLoading] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
-  const [turnstileModalVisible, setTurnstileModalVisible] = useState(false);
-  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0);
   const [checkinData, setCheckinData] = useState({
     enabled: false,
     stats: {
@@ -113,43 +110,24 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
     }
   };
 
-  const postCheckin = async (token) => {
-    const url = token
-      ? `/api/user/checkin?turnstile=${encodeURIComponent(token)}`
+  const postCheckin = () => {
+    const url = aliyunCaptchaToken
+      ? `/api/user/checkin?captcha=${encodeURIComponent(aliyunCaptchaToken)}`
       : '/api/user/checkin';
     return API.post(url);
   };
 
-  const shouldTriggerTurnstile = (message) => {
-    if (!turnstileEnabled) return false;
-    if (typeof message !== 'string') return true;
-    return message.includes('Turnstile');
-  };
-
-  const doCheckin = async (token) => {
+  const doCheckin = async () => {
     setCheckinLoading(true);
     try {
-      const res = await postCheckin(token);
+      const res = await postCheckin();
       const { success, data, message } = res.data;
       if (success) {
         showSuccess(
           t('签到成功！获得') + ' ' + renderQuota(data.quota_awarded),
         );
-        // 刷新签到状态
         fetchCheckinStatus(currentMonth);
-        setTurnstileModalVisible(false);
       } else {
-        if (!token && shouldTriggerTurnstile(message)) {
-          if (!turnstileSiteKey) {
-            showError('Turnstile is enabled but site key is empty.');
-            return;
-          }
-          setTurnstileModalVisible(true);
-          return;
-        }
-        if (token && shouldTriggerTurnstile(message)) {
-          setTurnstileWidgetKey((v) => v + 1);
-        }
         showError(message || t('签到失败'));
       }
     } catch (error) {
@@ -214,29 +192,6 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
 
   return (
     <Card className='!rounded-2xl'>
-      <Modal
-        title='Security Check'
-        visible={turnstileModalVisible}
-        footer={null}
-        centered
-        onCancel={() => {
-          setTurnstileModalVisible(false);
-          setTurnstileWidgetKey((v) => v + 1);
-        }}
-      >
-        <div className='flex justify-center py-2'>
-          <Turnstile
-            key={turnstileWidgetKey}
-            sitekey={turnstileSiteKey}
-            onVerify={(token) => {
-              doCheckin(token);
-            }}
-            onExpire={() => {
-              setTurnstileWidgetKey((v) => v + 1);
-            }}
-          />
-        </div>
-      </Modal>
 
       {/* 卡片头部 */}
       <div className='flex items-center justify-between'>

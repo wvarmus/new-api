@@ -39,7 +39,6 @@ import {
   buildAssertionResult,
   isPasskeySupported,
 } from '../../helpers';
-import Turnstile from 'react-turnstile';
 import { Button, Checkbox, Divider, Icon, Modal } from '@douyinfe/semi-ui';
 import TelegramLoginButton from 'react-telegram-login';
 import {
@@ -54,7 +53,6 @@ import LinuxDoIcon from '../common/logo/LinuxDoIcon';
 import TwoFAVerification from './TwoFAVerification';
 import AuthShell from './AuthShell';
 import { getAuthPageCopy } from './authShellContent';
-import SliderCaptcha from './SliderCaptcha';
 import {
   persistAllowedReturnTo,
   redirectAfterAuth,
@@ -87,9 +85,9 @@ const LoginForm = () => {
   const [searchParams] = useSearchParams();
   const [, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [aliyunCaptchaEnabled, setAliyunCaptchaEnabled] = useState(false);
+  const [aliyunCaptchaToken, setAliyunCaptchaToken] = useState('');
+  const aliyunCaptchaContainerRef = useRef(null);
   const [showWeChatLoginModal, setShowWeChatLoginModal] = useState(false);
   const [wechatLoading, setWechatLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
@@ -104,9 +102,6 @@ const LoginForm = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasUserAgreement, setHasUserAgreement] = useState(false);
   const [hasPrivacyPolicy, setHasPrivacyPolicy] = useState(false);
-  const [sliderCaptchaResetSignal, setSliderCaptchaResetSignal] = useState(0);
-  const [sliderCaptchaModalVisible, setSliderCaptchaModalVisible] =
-    useState(false);
   const [githubButtonState, setGithubButtonState] = useState('idle');
   const [githubButtonDisabled, setGithubButtonDisabled] = useState(false);
   const [customOAuthLoading, setCustomOAuthLoading] = useState({});
@@ -144,9 +139,8 @@ const LoginForm = () => {
     hasOAuthLoginOptions || (status.passkey_login && passkeySupported);
 
   useEffect(() => {
-    if (status?.turnstile_check) {
-      setTurnstileEnabled(true);
-      setTurnstileSiteKey(status.turnstile_site_key);
+    if (status?.aliyun_captcha_enabled) {
+      setAliyunCaptchaEnabled(true);
     }
 
     setHasUserAgreement(status?.user_agreement_enabled || false);
@@ -166,6 +160,50 @@ const LoginForm = () => {
   }, []);
 
   useEffect(() => {
+    if (!aliyunCaptchaEnabled) return;
+    const prefix = status?.aliyun_captcha_prefix || '';
+    const sceneId = status?.aliyun_captcha_scene_id || '';
+    const region = status?.aliyun_captcha_region || 'cn';
+    window.AliyunCaptchaConfig = { region, prefix };
+    const scriptId = 'aliyun-captcha-script';
+    if (document.getElementById(scriptId)) return;
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src =
+      'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
+    script.async = true;
+    script.onload = () => {
+      if (aliyunCaptchaContainerRef.current) {
+        const logoUrl = status?.logo || '';
+        window.initAliyunCaptcha({
+          SceneId: sceneId,
+          mode: 'embed',
+          element: '#aliyun-captcha-login',
+          button: '#aliyun-captcha-button-login',
+          captchaLogoImg: logoUrl || undefined,
+          success: (captchaVerifyParam) => {
+            setAliyunCaptchaToken(captchaVerifyParam);
+          },
+          fail: (result) => {
+            console.error('Aliyun captcha failed:', result);
+          },
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => {
+      const el = document.getElementById(scriptId);
+      if (el) el.remove();
+      delete window.AliyunCaptchaConfig;
+    };
+  }, [
+    aliyunCaptchaEnabled,
+    status?.aliyun_captcha_prefix,
+    status?.aliyun_captcha_scene_id,
+    status?.aliyun_captcha_region,
+  ]);
+
+  useEffect(() => {
     persistAllowedReturnTo(authReturnSearchRef.current);
 
     if (searchParams.get('expired')) {
@@ -181,16 +219,12 @@ const LoginForm = () => {
     return true;
   };
 
-  const ensureTurnstileReady = () => {
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！');
+  const ensureAliyunCaptchaReady = () => {
+    if (aliyunCaptchaEnabled && aliyunCaptchaToken === '') {
+      showInfo('请先完成验证码验证！');
       return false;
     }
     return true;
-  };
-
-  const resetSliderCaptcha = () => {
-    setSliderCaptchaResetSignal((current) => current + 1);
   };
 
   const handleChange = (name, value) => {
@@ -207,9 +241,6 @@ const LoginForm = () => {
   };
 
   const onSubmitWeChatVerificationCode = async () => {
-    if (!ensureTurnstileReady()) {
-      return;
-    }
     setWechatCodeSubmitLoading(true);
     try {
       const res = await API.get(
@@ -233,12 +264,13 @@ const LoginForm = () => {
     }
   };
 
-  const submitLogin = async () => {
+  const submitLogin = async (captchaTokenOverride) => {
+    const captchaToken = captchaTokenOverride !== undefined ? captchaTokenOverride : aliyunCaptchaToken;
     setLoginLoading(true);
     try {
       if (username && password) {
         const res = await API.post(
-          `/api/user/login?turnstile=${turnstileToken}`,
+          `/api/user/login?captcha=${captchaToken}`,
           {
             username,
             password,
@@ -266,15 +298,12 @@ const LoginForm = () => {
           userDispatch({ type: 'login', payload: data });
         } else {
           showError(message);
-          resetSliderCaptcha();
         }
       } else {
         showError('请输入用户名和密码！');
-        resetSliderCaptcha();
       }
     } catch (error) {
       showError('登录失败，请重试');
-      resetSliderCaptcha();
     } finally {
       setLoginLoading(false);
     }
@@ -287,18 +316,11 @@ const LoginForm = () => {
     }
     if (!username || !password) {
       showError('请输入用户名和密码！');
-      resetSliderCaptcha();
       return;
     }
-    if (!ensureTurnstileReady()) {
+    if (!ensureAliyunCaptchaReady()) {
       return;
     }
-    resetSliderCaptcha();
-    setSliderCaptchaModalVisible(true);
-  };
-
-  const handleSliderCaptchaVerified = () => {
-    setSliderCaptchaModalVisible(false);
     submitLogin();
   };
 
@@ -740,31 +762,6 @@ const LoginForm = () => {
     );
   };
 
-  const renderSliderCaptchaModal = () => {
-    return (
-      <Modal
-        title={t('滑块验证码')}
-        visible={sliderCaptchaModalVisible}
-        footer={null}
-        width={380}
-        centered
-        maskClosable={!loginLoading}
-        onCancel={() => {
-          setSliderCaptchaModalVisible(false);
-          resetSliderCaptcha();
-        }}
-      >
-        <div className='pb-4'>
-          <SliderCaptcha
-            t={t}
-            onVerified={handleSliderCaptchaVerified}
-            resetSignal={sliderCaptchaResetSignal}
-          />
-        </div>
-      </Modal>
-    );
-  };
-
   return (
     <AuthShell mode='login'>
       <form className='space-y-5' onSubmit={handleSubmit}>
@@ -798,6 +795,19 @@ const LoginForm = () => {
           />
         </div>
 
+        {aliyunCaptchaEnabled && (
+          <div className='mt-4 w-full' style={{ '--aliyun-slide-width': '100%' }}>
+            <div
+              id='aliyun-captcha-login'
+              ref={aliyunCaptchaContainerRef}
+            />
+            <div
+              id='aliyun-captcha-button-login'
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
+
         {renderTerms()}
 
         <Button
@@ -815,17 +825,6 @@ const LoginForm = () => {
 
       {renderOtherLoginOptions()}
 
-      {turnstileEnabled && (
-        <div className='mt-6 flex justify-center'>
-          <Turnstile
-            sitekey={turnstileSiteKey}
-            onVerify={(token) => {
-              setTurnstileToken(token);
-            }}
-          />
-        </div>
-      )}
-
       <p className='auth-theme-switch-text mt-8 text-center text-sm'>
         {pageCopy.switchPrefix}{' '}
         <Link
@@ -838,7 +837,6 @@ const LoginForm = () => {
 
       {renderWeChatLoginModal()}
       {render2FAModal()}
-      {renderSliderCaptchaModal()}
     </AuthShell>
   );
 };

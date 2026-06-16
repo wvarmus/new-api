@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   API,
@@ -67,9 +67,9 @@ const PersonalSetting = () => {
   const [showWeChatBindModal, setShowWeChatBindModal] = useState(false);
   const [showEmailBindModal, setShowEmailBindModal] = useState(false);
   const [showAccountDeleteModal, setShowAccountDeleteModal] = useState(false);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [aliyunCaptchaEnabled, setAliyunCaptchaEnabled] = useState(false);
+  const [aliyunCaptchaToken, setAliyunCaptchaToken] = useState('');
+  const aliyunCaptchaContainerRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
   const [countdown, setCountdown] = useState(30);
@@ -130,12 +130,10 @@ const PersonalSetting = () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       setStatus(parsed);
-      if (parsed.turnstile_check) {
-        setTurnstileEnabled(true);
-        setTurnstileSiteKey(parsed.turnstile_site_key);
+      if (parsed.aliyun_captcha_enabled) {
+        setAliyunCaptchaEnabled(true);
       } else {
-        setTurnstileEnabled(false);
-        setTurnstileSiteKey('');
+        setAliyunCaptchaEnabled(false);
       }
     }
     // Always refresh status from server to avoid stale flags (e.g., admin just enabled OAuth)
@@ -146,12 +144,10 @@ const PersonalSetting = () => {
         if (success && data) {
           setStatus(data);
           setStatusData(data);
-          if (data.turnstile_check) {
-            setTurnstileEnabled(true);
-            setTurnstileSiteKey(data.turnstile_site_key);
+          if (data.aliyun_captcha_enabled) {
+            setAliyunCaptchaEnabled(true);
           } else {
-            setTurnstileEnabled(false);
-            setTurnstileSiteKey('');
+            setAliyunCaptchaEnabled(false);
           }
         }
       } catch (e) {
@@ -165,6 +161,50 @@ const PersonalSetting = () => {
       .then(setPasskeySupported)
       .catch(() => setPasskeySupported(false));
   }, []);
+
+  useEffect(() => {
+    if (!aliyunCaptchaEnabled) return;
+    const prefix = status?.aliyun_captcha_prefix || '';
+    const sceneId = status?.aliyun_captcha_scene_id || '';
+    const region = status?.aliyun_captcha_region || 'cn';
+    window.AliyunCaptchaConfig = { region, prefix };
+    const scriptId = 'aliyun-captcha-script-personal';
+    if (document.getElementById(scriptId)) return;
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src =
+      'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
+    script.async = true;
+    script.onload = () => {
+      if (aliyunCaptchaContainerRef.current) {
+        const logoUrl = status?.logo || '';
+        window.initAliyunCaptcha({
+          SceneId: sceneId,
+          mode: 'embed',
+          element: '#aliyun-captcha-personal',
+          button: '#aliyun-captcha-button-personal',
+          captchaLogoImg: logoUrl || undefined,
+          success: (captchaVerifyParam) => {
+            setAliyunCaptchaToken(captchaVerifyParam);
+          },
+          fail: (result) => {
+            console.error('Aliyun captcha failed:', result);
+          },
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => {
+      const el = document.getElementById(scriptId);
+      if (el) el.remove();
+      delete window.AliyunCaptchaConfig;
+    };
+  }, [
+    aliyunCaptchaEnabled,
+    status?.aliyun_captcha_prefix,
+    status?.aliyun_captcha_scene_id,
+    status?.aliyun_captcha_region,
+  ]);
 
   useEffect(() => {
     let countdownInterval = null;
@@ -448,13 +488,13 @@ const PersonalSetting = () => {
       return;
     }
     setDisableButton(true);
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo(t('请稍后几秒重试，Turnstile 正在检查用户环境！'));
+    if (aliyunCaptchaEnabled && aliyunCaptchaToken === '') {
+      showInfo(t('请先完成验证码验证！'));
       return;
     }
     setLoading(true);
     const res = await API.get(
-      `/api/verification?email=${inputs.email}&turnstile=${turnstileToken}`,
+      `/api/verification?email=${inputs.email}&captcha=${aliyunCaptchaToken}`,
     );
     const { success, message } = res.data;
     if (success) {
@@ -548,14 +588,27 @@ const PersonalSetting = () => {
           {/* 顶部用户信息区域 */}
           <UserInfoHeader t={t} userState={userState} />
 
+          {aliyunCaptchaEnabled && (
+            <div className='mt-4 w-full max-w-xl mx-auto' style={{ '--aliyun-slide-width': '100%' }}>
+              <div
+                id='aliyun-captcha-personal'
+                ref={aliyunCaptchaContainerRef}
+              />
+              <div
+                id='aliyun-captcha-button-personal'
+                style={{ display: 'none' }}
+              />
+            </div>
+          )}
+
           {/* 签到日历 - 仅在启用时显示 */}
           {status?.checkin_enabled && (
             <div className='mt-4 md:mt-6'>
               <CheckinCalendar
                 t={t}
                 status={status}
-                turnstileEnabled={turnstileEnabled}
-                turnstileSiteKey={turnstileSiteKey}
+                aliyunCaptchaEnabled={aliyunCaptchaEnabled}
+                aliyunCaptchaToken={aliyunCaptchaToken}
               />
             </div>
           )}
@@ -610,9 +663,6 @@ const PersonalSetting = () => {
         disableButton={disableButton}
         loading={loading}
         countdown={countdown}
-        turnstileEnabled={turnstileEnabled}
-        turnstileSiteKey={turnstileSiteKey}
-        setTurnstileToken={setTurnstileToken}
       />
 
       <WeChatBindModal
@@ -633,9 +683,8 @@ const PersonalSetting = () => {
         handleInputChange={handleInputChange}
         deleteAccount={deleteAccount}
         userState={userState}
-        turnstileEnabled={turnstileEnabled}
-        turnstileSiteKey={turnstileSiteKey}
-        setTurnstileToken={setTurnstileToken}
+        aliyunCaptchaEnabled={aliyunCaptchaEnabled}
+        aliyunCaptchaToken={aliyunCaptchaToken}
       />
 
       <ChangePasswordModal
@@ -645,9 +694,8 @@ const PersonalSetting = () => {
         inputs={inputs}
         handleInputChange={handleInputChange}
         changePassword={changePassword}
-        turnstileEnabled={turnstileEnabled}
-        turnstileSiteKey={turnstileSiteKey}
-        setTurnstileToken={setTurnstileToken}
+        aliyunCaptchaEnabled={aliyunCaptchaEnabled}
+        aliyunCaptchaToken={aliyunCaptchaToken}
       />
 
       <SecureVerificationModal

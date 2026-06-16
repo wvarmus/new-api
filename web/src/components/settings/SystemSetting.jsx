@@ -82,9 +82,12 @@ const SystemSetting = () => {
     WeChatServerAddress: '',
     WeChatServerToken: '',
     WeChatAccountQRCodeImageURL: '',
-    TurnstileCheckEnabled: '',
-    TurnstileSiteKey: '',
-    TurnstileSecretKey: '',
+    AliyunCaptchaEnabled: '',
+    AliyunCaptchaAccessKeyId: '',
+    AliyunCaptchaAccessKeySecret: '',
+    AliyunCaptchaSceneId: '',
+    AliyunCaptchaPrefix: '',
+    AliyunCaptchaRegion: 'cn',
     RegisterEnabled: '',
     'passkey.enabled': '',
     'passkey.rp_display_name': '',
@@ -184,7 +187,7 @@ const SystemSetting = () => {
           case 'WeChatAuthEnabled':
           case 'TelegramOAuthEnabled':
           case 'RegisterEnabled':
-          case 'TurnstileCheckEnabled':
+          case 'AliyunCaptchaEnabled':
           case 'EmailDomainRestrictionEnabled':
           case 'EmailAliasRestrictionEnabled':
           case 'SMTPSSLEnabled':
@@ -640,19 +643,44 @@ const SystemSetting = () => {
     await updateOptions(options);
   };
 
-  const submitTurnstile = async () => {
+  const submitAliyunCaptcha = async () => {
     const options = [];
 
-    if (originInputs['TurnstileSiteKey'] !== inputs.TurnstileSiteKey) {
-      options.push({ key: 'TurnstileSiteKey', value: inputs.TurnstileSiteKey });
-    }
     if (
-      originInputs['TurnstileSecretKey'] !== inputs.TurnstileSecretKey &&
-      inputs.TurnstileSecretKey !== ''
+      originInputs['AliyunCaptchaAccessKeyId'] !==
+      inputs.AliyunCaptchaAccessKeyId
     ) {
       options.push({
-        key: 'TurnstileSecretKey',
-        value: inputs.TurnstileSecretKey,
+        key: 'AliyunCaptchaAccessKeyId',
+        value: inputs.AliyunCaptchaAccessKeyId,
+      });
+    }
+    if (
+      originInputs['AliyunCaptchaAccessKeySecret'] !==
+        inputs.AliyunCaptchaAccessKeySecret &&
+      inputs.AliyunCaptchaAccessKeySecret !== ''
+    ) {
+      options.push({
+        key: 'AliyunCaptchaAccessKeySecret',
+        value: inputs.AliyunCaptchaAccessKeySecret,
+      });
+    }
+    if (originInputs['AliyunCaptchaSceneId'] !== inputs.AliyunCaptchaSceneId) {
+      options.push({
+        key: 'AliyunCaptchaSceneId',
+        value: inputs.AliyunCaptchaSceneId,
+      });
+    }
+    if (originInputs['AliyunCaptchaPrefix'] !== inputs.AliyunCaptchaPrefix) {
+      options.push({
+        key: 'AliyunCaptchaPrefix',
+        value: inputs.AliyunCaptchaPrefix,
+      });
+    }
+    if (originInputs['AliyunCaptchaRegion'] !== inputs.AliyunCaptchaRegion) {
+      options.push({
+        key: 'AliyunCaptchaRegion',
+        value: inputs.AliyunCaptchaRegion,
       });
     }
 
@@ -1146,14 +1174,17 @@ const SystemSetting = () => {
                         {t('允许新用户注册')}
                       </Form.Checkbox>
                       <Form.Checkbox
-                        field='TurnstileCheckEnabled'
+                        field='AliyunCaptchaEnabled'
                         noLabel
                         onChange={(e) =>
-                          handleCheckboxChange('TurnstileCheckEnabled', e)
+                          handleCheckboxChange('AliyunCaptchaEnabled', e)
                         }
                       >
-                        {t('允许 Turnstile 用户校验')}
+                        {t('启用阿里云验证码')}
                       </Form.Checkbox>
+                      <div className='mt-1 text-xs text-gray-400'>
+                        {t('生效位置：登录、注册、发送验证码、重置密码、签到')}
+                      </div>
                     </Col>
                     <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                       <Form.Checkbox
@@ -1728,28 +1759,55 @@ const SystemSetting = () => {
               </Card>
 
               <Card>
-                <Form.Section text={t('配置 Turnstile')}>
+                <Form.Section text={t('配置阿里云验证码')}>
                   <Text>{t('用以支持用户校验')}</Text>
                   <Row
                     gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
                   >
                     <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                       <Form.Input
-                        field='TurnstileSiteKey'
-                        label={t('Turnstile Site Key')}
+                        field='AliyunCaptchaAccessKeyId'
+                        label={t('阿里云 AccessKey ID')}
                       />
                     </Col>
                     <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                       <Form.Input
-                        field='TurnstileSecretKey'
-                        label={t('Turnstile Secret Key')}
+                        field='AliyunCaptchaAccessKeySecret'
+                        label={t('阿里云 AccessKey Secret')}
                         type='password'
                         placeholder={t('敏感信息不会发送到前端显示')}
                       />
                     </Col>
                   </Row>
-                  <Button onClick={submitTurnstile}>
-                    {t('保存 Turnstile 设置')}
+                  <Row
+                    gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
+                  >
+                    <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                      <Form.Input
+                        field='AliyunCaptchaSceneId'
+                        label={t('阿里云 场景 ID')}
+                      />
+                    </Col>
+                    <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                      <Form.Input
+                        field='AliyunCaptchaPrefix'
+                        label={t('阿里云 身份标 (Prefix)')}
+                      />
+                    </Col>
+                  </Row>
+                  <Row
+                    gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
+                  >
+                    <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                      <Form.Input
+                        field='AliyunCaptchaRegion'
+                        label={t('阿里云 Region')}
+                        placeholder='cn'
+                      />
+                    </Col>
+                  </Row>
+                  <Button onClick={submitAliyunCaptcha}>
+                    {t('保存阿里云验证码设置')}
                   </Button>
                 </Form.Section>
               </Card>
