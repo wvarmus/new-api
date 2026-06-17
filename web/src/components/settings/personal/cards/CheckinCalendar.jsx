@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota } from '../../../../helpers';
 
-const CheckinCalendar = ({ t, status, aliyunCaptchaEnabled, aliyunCaptchaToken }) => {
+const CheckinCalendar = ({ t, status }) => {
   const [loading, setLoading] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinData, setCheckinData] = useState({
@@ -111,10 +111,7 @@ const CheckinCalendar = ({ t, status, aliyunCaptchaEnabled, aliyunCaptchaToken }
   };
 
   const postCheckin = () => {
-    const url = aliyunCaptchaToken
-      ? `/api/user/checkin?captcha=${encodeURIComponent(aliyunCaptchaToken)}`
-      : '/api/user/checkin';
-    return API.post(url);
+    return API.post('/api/user/checkin');
   };
 
   const doCheckin = async () => {

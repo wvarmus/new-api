@@ -1183,7 +1183,7 @@ const SystemSetting = () => {
                         {t('启用阿里云验证码')}
                       </Form.Checkbox>
                       <div className='mt-1 text-xs text-gray-400'>
-                        {t('生效位置：登录、注册、发送验证码、重置密码、签到')}
+                        {t('生效位置：登录、注册、发送验证码')}
                       </div>
                     </Col>
                     <Col xs={24} sm={24} md={12} lg={12} xl={12}>

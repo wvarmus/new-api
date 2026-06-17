@@ -163,36 +163,42 @@ const PersonalSetting = () => {
   }, []);
 
   useEffect(() => {
-    if (!aliyunCaptchaEnabled) return;
+    if (!aliyunCaptchaEnabled || !showEmailBindModal) return;
     const prefix = status?.aliyun_captcha_prefix || '';
     const sceneId = status?.aliyun_captcha_scene_id || '';
     const region = status?.aliyun_captcha_region || 'cn';
     window.AliyunCaptchaConfig = { region, prefix };
     const scriptId = 'aliyun-captcha-script-personal';
-    if (document.getElementById(scriptId)) return;
+
+    const initCaptcha = () => {
+      if (!aliyunCaptchaContainerRef.current || !window.initAliyunCaptcha) return;
+      const logoUrl = status?.logo || '';
+      window.initAliyunCaptcha({
+        SceneId: sceneId,
+        mode: 'embed',
+        element: '#aliyun-captcha-personal',
+        button: '#aliyun-captcha-button-personal',
+        captchaLogoImg: logoUrl || undefined,
+        success: (captchaVerifyParam) => {
+          setAliyunCaptchaToken(captchaVerifyParam);
+        },
+        fail: (result) => {
+          console.error('Aliyun captcha failed:', result);
+        },
+      });
+    };
+
+    if (document.getElementById(scriptId)) {
+      initCaptcha();
+      return;
+    }
+
     const script = document.createElement('script');
     script.id = scriptId;
     script.src =
       'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
     script.async = true;
-    script.onload = () => {
-      if (aliyunCaptchaContainerRef.current) {
-        const logoUrl = status?.logo || '';
-        window.initAliyunCaptcha({
-          SceneId: sceneId,
-          mode: 'embed',
-          element: '#aliyun-captcha-personal',
-          button: '#aliyun-captcha-button-personal',
-          captchaLogoImg: logoUrl || undefined,
-          success: (captchaVerifyParam) => {
-            setAliyunCaptchaToken(captchaVerifyParam);
-          },
-          fail: (result) => {
-            console.error('Aliyun captcha failed:', result);
-          },
-        });
-      }
-    };
+    script.onload = initCaptcha;
     document.head.appendChild(script);
     return () => {
       const el = document.getElementById(scriptId);
@@ -201,9 +207,11 @@ const PersonalSetting = () => {
     };
   }, [
     aliyunCaptchaEnabled,
+    showEmailBindModal,
     status?.aliyun_captcha_prefix,
     status?.aliyun_captcha_scene_id,
     status?.aliyun_captcha_region,
+    status?.logo,
   ]);
 
   useEffect(() => {
@@ -487,11 +495,11 @@ const PersonalSetting = () => {
       showError(t('请输入邮箱！'));
       return;
     }
-    setDisableButton(true);
     if (aliyunCaptchaEnabled && aliyunCaptchaToken === '') {
       showInfo(t('请先完成验证码验证！'));
       return;
     }
+    setDisableButton(true);
     setLoading(true);
     const res = await API.get(
       `/api/verification?email=${inputs.email}&captcha=${aliyunCaptchaToken}`,
@@ -588,27 +596,12 @@ const PersonalSetting = () => {
           {/* 顶部用户信息区域 */}
           <UserInfoHeader t={t} userState={userState} />
 
-          {aliyunCaptchaEnabled && (
-            <div className='mt-4 w-full max-w-xl mx-auto' style={{ '--aliyun-slide-width': '100%' }}>
-              <div
-                id='aliyun-captcha-personal'
-                ref={aliyunCaptchaContainerRef}
-              />
-              <div
-                id='aliyun-captcha-button-personal'
-                style={{ display: 'none' }}
-              />
-            </div>
-          )}
-
           {/* 签到日历 - 仅在启用时显示 */}
           {status?.checkin_enabled && (
             <div className='mt-4 md:mt-6'>
               <CheckinCalendar
                 t={t}
                 status={status}
-                aliyunCaptchaEnabled={aliyunCaptchaEnabled}
-                aliyunCaptchaToken={aliyunCaptchaToken}
               />
             </div>
           )}
@@ -663,6 +656,8 @@ const PersonalSetting = () => {
         disableButton={disableButton}
         loading={loading}
         countdown={countdown}
+        aliyunCaptchaEnabled={aliyunCaptchaEnabled}
+        aliyunCaptchaContainerRef={aliyunCaptchaContainerRef}
       />
 
       <WeChatBindModal
@@ -683,8 +678,6 @@ const PersonalSetting = () => {
         handleInputChange={handleInputChange}
         deleteAccount={deleteAccount}
         userState={userState}
-        aliyunCaptchaEnabled={aliyunCaptchaEnabled}
-        aliyunCaptchaToken={aliyunCaptchaToken}
       />
 
       <ChangePasswordModal
@@ -694,8 +687,6 @@ const PersonalSetting = () => {
         inputs={inputs}
         handleInputChange={handleInputChange}
         changePassword={changePassword}
-        aliyunCaptchaEnabled={aliyunCaptchaEnabled}
-        aliyunCaptchaToken={aliyunCaptchaToken}
       />
 
       <SecureVerificationModal

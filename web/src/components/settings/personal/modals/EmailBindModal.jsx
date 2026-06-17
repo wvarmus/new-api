@@ -33,7 +33,7 @@ const EmailBindModal = ({
   loading,
   countdown,
   aliyunCaptchaEnabled,
-  aliyunCaptchaToken,
+  aliyunCaptchaContainerRef,
 }) => {
   return (
     <Modal
@@ -75,6 +75,22 @@ const EmailBindModal = ({
               : t('获取验证码')}
           </Button>
         </div>
+
+        {aliyunCaptchaEnabled && (
+          <div
+            className='w-full'
+            style={{ '--aliyun-slide-width': '100%' }}
+          >
+            <div
+              id='aliyun-captcha-personal'
+              ref={aliyunCaptchaContainerRef}
+            />
+            <div
+              id='aliyun-captcha-button-personal'
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
 
         <Input
           placeholder={t('验证码')}

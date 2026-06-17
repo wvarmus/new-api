@@ -28,8 +28,6 @@ const ChangePasswordModal = ({
   inputs,
   handleInputChange,
   changePassword,
-  aliyunCaptchaEnabled,
-  aliyunCaptchaToken,
 }) => {
   return (
     <Modal

@@ -29,8 +29,6 @@ const AccountDeleteModal = ({
   handleInputChange,
   deleteAccount,
   userState,
-  aliyunCaptchaEnabled,
-  aliyunCaptchaToken,
 }) => {
   return (
     <Modal
