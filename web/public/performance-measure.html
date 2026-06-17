@@ -35,6 +35,9 @@ body{
 .btn:hover{background:var(--bg-muted)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.primary:hover{opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:disabled:hover{background:var(--bg-card)}
+.btn.primary:disabled:hover{background:var(--accent);opacity:.5}
 
 /* timer bar */
 .timer-bar{
@@ -184,6 +187,7 @@ tr:last-child td{border-bottom:none}
   let loadEndTime = 0;
 
   function startTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     timerStart = performance.now();
     loadEndTime = 0;
     $('#timerBar').classList.remove('done');
@@ -430,7 +434,21 @@ tr:last-child td{border-bottom:none}
 
   // --- main: load and measure ---
   let reportData = null;
+  let isTesting = false;
+  let currentRunId = 0;
   const TARGET_URL = '/';
+
+  function updateButtonState() {
+    $('#retestBtn').disabled = isTesting;
+    $('#copyReportBtn').disabled = isTesting || !reportData;
+    $('#retestBtn').textContent = isTesting ? '测试中...' : '重新测试';
+    $('#copyReportBtn').textContent = isTesting ? '诊断中...' : '复制报告';
+  }
+
+  function setTestingState(testing) {
+    isTesting = testing;
+    updateButtonState();
+  }
 
   async function measureRTT(samples) {
     var values = [];
@@ -467,6 +485,9 @@ tr:last-child td{border-bottom:none}
   }
 
   function startTest(url) {
+    const runId = ++currentRunId;
+    reportData = null;
+    setTestingState(true);
     startTimer();
     $('#resourceCount').textContent = '0 项 (加载中)';
     lastResourceCount = 0;
@@ -479,6 +500,7 @@ tr:last-child td{border-bottom:none}
     const dest = url || TARGET_URL;
 
     function onLoad() {
+      if (runId !== currentRunId) return;
       stopTimer();
 
       try {
@@ -523,19 +545,17 @@ tr:last-child td{border-bottom:none}
           })).sort((a, b) => b.duration - a.duration),
         };
 
-        if (actualUrl !== dest) {
-          $('#timerStatus').innerHTML += ' (重定向到 ' + actualUrl.split('/').pop() + ')';
-        }
+        const statusSuffix = actualUrl !== dest ? ' (重定向到 ' + actualUrl.split('/').pop() + ')' : '';
+        $('#timerStatus').textContent = '加载完成，正在补充指标...' + statusSuffix;
 
-        $('#timerStatus').textContent = '加载完成';
-
-        measureRTT(7).then(function(rttStats) {
-          if (!reportData) return;
+        const rttPromise = measureRTT(7).then(function(rttStats) {
+          if (runId !== currentRunId || !reportData) return;
           reportData.rttStats = rttStats;
           renderMetrics(timing, parentTiming, resourceSummary, rttStats);
         });
 
-        collectLCP(iframe.contentWindow, 3000).then(function(finalLcp) {
+        const lcpPromise = collectLCP(iframe.contentWindow, 3000).then(function(finalLcp) {
+          if (runId !== currentRunId || !reportData) return;
           if (finalLcp > 0 && finalLcp !== timing.lcp) {
             timing.lcp = finalLcp;
             reportData.timing.lcp = finalLcp;
@@ -543,7 +563,8 @@ tr:last-child td{border-bottom:none}
           }
         });
 
-        collectFCP(iframe.contentWindow, 500).then(function(finalFcp) {
+        const fcpPromise = collectFCP(iframe.contentWindow, 500).then(function(finalFcp) {
+          if (runId !== currentRunId || !reportData) return;
           if (finalFcp >= 0 && finalFcp !== timing.fcp) {
             timing.fcp = finalFcp;
             reportData.timing.fcp = finalFcp;
@@ -551,15 +572,30 @@ tr:last-child td{border-bottom:none}
           }
         });
 
+        Promise.all([
+          rttPromise.catch(function() {}),
+          lcpPromise.catch(function() {}),
+          fcpPromise.catch(function() {}),
+        ]).then(function() {
+          if (runId !== currentRunId) return;
+          $('#timerStatus').textContent = '诊断完成' + statusSuffix;
+          setTestingState(false);
+        });
+
       } catch (e) {
         console.error('Failed to read iframe performance:', e);
         $('#timerStatus').textContent = '无法读取性能数据 (可能非同源，请检查是否通过相同域名访问)';
+        reportData = null;
+        setTestingState(false);
       }
     }
 
     function onError() {
+      if (runId !== currentRunId) return;
       stopTimer();
       $('#timerStatus').textContent = 'iframe 加载失败';
+      reportData = null;
+      setTestingState(false);
     }
 
     iframe.onload = onLoad;
@@ -568,6 +604,10 @@ tr:last-child td{border-bottom:none}
   }
 
   function retest() {
+    if (isTesting) {
+      showToast('诊断中，请等待完成后再重新测试');
+      return;
+    }
     const base = TARGET_URL;
     const sep = base.includes('?') ? '&' : '?';
     const cacheBust = base + sep + '_t=' + Date.now();
@@ -576,6 +616,10 @@ tr:last-child td{border-bottom:none}
 
   // --- copy report ---
   function copyReport() {
+    if (isTesting) {
+      showToast('诊断中，请等待完成后再复制报告');
+      return;
+    }
     if (!reportData) {
       showToast('请等待测试完成后再复制报告');
       return;
