@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -91,9 +92,28 @@ func rateLimitFactory(maxRequestNum int, duration int64, mark string) func(c *gi
 
 func GlobalWebRateLimit() func(c *gin.Context) {
 	if common.GlobalWebRateLimitEnable {
-		return rateLimitFactory(common.GlobalWebRateLimitNum, common.GlobalWebRateLimitDuration, "GW")
+		limiter := rateLimitFactory(common.GlobalWebRateLimitNum, common.GlobalWebRateLimitDuration, "GW")
+		return func(c *gin.Context) {
+			if c.Request.URL.Path == "/debug-ping" || c.Request.URL.Path == "/performance-measure" || isStaticAssetPath(c.Request.URL.Path) {
+				c.Next()
+				return
+			}
+			limiter(c)
+		}
 	}
 	return defNext
+}
+
+var staticAssetExtensions = map[string]bool{
+	".js": true, ".mjs": true, ".css": true, ".html": true,
+	".woff": true, ".woff2": true, ".ttf": true, ".eot": true, ".otf": true,
+	".png": true, ".svg": true, ".ico": true, ".webp": true,
+	".jpg": true, ".jpeg": true, ".gif": true, ".avif": true,
+	".json": true, ".map": true, ".xml": true, ".txt": true,
+}
+
+func isStaticAssetPath(urlPath string) bool {
+	return staticAssetExtensions[path.Ext(urlPath)]
 }
 
 func GlobalAPIRateLimit() func(c *gin.Context) {

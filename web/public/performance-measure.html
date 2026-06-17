@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Measure</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f13;--bg-card:#18181d;--bg-muted:#22222a;
+  --border:#2a2a35;--text:#e4e4e7;--text-muted:#8b8b96;
+  --accent:#6366f1;--green:#22c55e;--yellow:#eab308;--red:#ef4444;
+  --radius:8px;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  line-height:1.5;
+}
+.container{max-width:1100px;margin:0 auto;padding:16px 20px 32px;position:relative;z-index:1}
+
+/* header */
+.header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  flex-wrap:wrap;gap:12px;margin-bottom:20px;
+}
+.header h1{font-size:22px;font-weight:700}
+.header p{font-size:13px;color:var(--text-muted);margin-top:2px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  padding:7px 16px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--bg-card);color:var(--text);cursor:pointer;
+  font-size:13px;line-height:1;transition:all .15s;
+}
+.btn:hover{background:var(--bg-muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{opacity:.9}
+
+/* timer bar */
+.timer-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border);
+  margin-bottom:16px;font-size:28px;font-family:'SF Mono','Cascadia Code',monospace;font-weight:700;
+}
+.timer-bar .spinner{
+  width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;
+}
+.timer-bar.done .spinner{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.timer-status{font-size:13px;color:var(--text-muted);font-weight:400}
+
+/* metric cards */
+.metric-section{margin-bottom:16px}
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:10px;
+}
+.metric-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;
+}
+.metric-card .label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.metric-card .value{font-size:22px;font-weight:700;margin-top:2px;font-family:'SF Mono','Cascadia Code',monospace}
+.metric-card .sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* status pill */
+.status-pill{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  border-radius:99px;font-size:11px;font-weight:600;
+}
+.status-pill.good{background:rgba(34,197,94,.12);color:var(--green)}
+.status-pill.warn{background:rgba(234,179,8,.12);color:var(--yellow)}
+.status-pill.bad{background:rgba(239,68,68,.12);color:var(--red)}
+.status-pill.pending{background:rgba(99,102,241,.12);color:var(--accent)}
+
+/* resource table */
+.section-title{
+  font-size:14px;font-weight:600;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.table-wrap{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow-x:auto;margin-bottom:16px;
+}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:500}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.mono{font-family:'SF Mono','Cascadia Code',monospace;font-size:12px}
+.name-cell{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-cell{min-width:100px}
+.bar-bg{height:6px;background:var(--bg-muted);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.empty-row td{text-align:center;color:var(--text-muted);padding:24px}
+
+/* toast for clipboard */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--bg-muted);border:1px solid var(--border);
+  padding:8px 20px;border-radius:var(--radius);font-size:13px;
+  opacity:0;transition:opacity .2s;pointer-events:none;z-index:100;
+}
+.toast.show{opacity:1}
+
+.probe-frame{
+  display:block;position:fixed;left:0;top:0;
+  width:100vw;height:100vh;border:0;background:#fff;
+  opacity:.01;pointer-events:none;z-index:0;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div>
+      <h1>Performance Measure</h1>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="retestBtn">重新测试</button>
+      <button class="btn primary" id="copyReportBtn">复制报告</button>
+    </div>
+  </header>
+
+  <div class="timer-bar" id="timerBar" style="display:none">
+    <div class="spinner"></div>
+    <span id="timerDisplay">0ms</span>
+    <span class="timer-status" id="timerStatus">等待加载...</span>
+  </div>
+
+  <section class="metric-section">
+    <div class="section-title">连接</div>
+    <div class="metrics-grid" id="connectionMetrics"></div>
+  </section>
+
+  <section class="metric-section">
+    <div class="section-title">资源</div>
+    <div class="metrics-grid" id="resourceMetrics"></div>
+  </section>
+
+  <section class="metric-section">
+    <div class="section-title">渲染</div>
+    <div class="metrics-grid" id="renderMetrics"></div>
+  </section>
+
+  <div class="table-wrap" id="resourceTable">
+    <div class="section-title" style="padding:12px 14px 0">
+      资源加载瀑布
+      <span class="status-pill pending" id="resourceCount">0 项</span>
+    </div>
+    <table>
+      <thead><tr><th>资源</th><th>传输</th><th>解压后</th><th>耗时</th><th style="width:100px"></th></tr></thead>
+      <tbody id="resourceBody">
+        <tr class="empty-row"><td colspan="5">等待 iframe 加载完成后显示...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <iframe id="target" class="probe-frame" title="main site"></iframe>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- helpers ---
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  function fmtMs(v) { return v != null && v >= 0 ? v.toFixed(0) + 'ms' : '-'; }
+  function fmtMsPrecise(v) { return v != null && v >= 0 ? v.toFixed(2) + 'ms' : '-'; }
+  function fmtBytes(b) {
+    if (b == null || b <= 0) return '-';
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(2) + ' MB';
+  }
+  // --- timer ---
+  let timerStart = 0;
+  let timerInterval = null;
+  let loadEndTime = 0;
+
+  function startTimer() {
+    timerStart = performance.now();
+    loadEndTime = 0;
+    $('#timerBar').classList.remove('done');
+    $('#timerDisplay').textContent = '0ms';
+    $('#timerStatus').textContent = '正在加载...';
+    timerInterval = setInterval(updateTimer, 100);
+  }
+
+  function updateTimer() {
+    const now = loadEndTime || performance.now();
+    const elapsedMs = now - timerStart;
+    $('#timerDisplay').textContent = fmtMs(elapsedMs);
+    if (!loadEndTime && elapsedMs >= 2000 && elapsedMs < 5000) {
+      // Poll for early resources
+      pollResources();
+    }
+    if (elapsedMs >= 10000 && !loadEndTime) {
+      $('#timerStatus').textContent = '仍在加载 (>10000ms)...';
+    }
+    if (elapsedMs >= 20000 && !loadEndTime) {
+      $('#timerStatus').textContent = '非常慢 (>20000ms)...';
+    }
+  }
+
+  function stopTimer() {
+    loadEndTime = performance.now();
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    updateTimer();
+    $('#timerBar').classList.add('done');
+  }
+
+  // --- poll iframe resources ---
+  let lastResourceCount = 0;
+  function pollResources() {
+    try {
+      const iframe = $('#target');
+      if (!iframe || !iframe.contentWindow) return;
+      const perf = iframe.contentWindow.performance;
+      if (!perf) return;
+      const entries = perf.getEntriesByType('resource');
+      if (entries.length !== lastResourceCount) {
+        lastResourceCount = entries.length;
+        $('#resourceCount').textContent = entries.length + ' 项 (加载中)';
+        if (entries.length > 0) {
+          renderResources(entries);
+        }
+      }
+    } catch (e) { /* cross-origin or not ready */ }
+  }
+
+  // --- render metrics ---
+  function renderCards(containerId, rows) {
+    var html = '';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      html += '<div class="metric-card">';
+      html += '<div class="label">' + r.label + '</div>';
+      html += '<div class="value">' + r.value + '</div>';
+      if (r.note) {
+        html += '<div class="sub" style="color:var(--text-muted)">' + r.note + '</div>';
+      }
+      html += '</div>';
+    }
+    $(containerId).innerHTML = html;
+  }
+
+  function renderMetrics(timing, parentTiming, resourceSummary, rttStats) {
+    function connectionValue(value, parentValue) {
+      return value > 0 ? value : (parentValue >= 0 ? parentValue : value);
+    }
+
+    renderCards('#connectionMetrics', [
+      { label: 'DNS 解析', value: fmtMsPrecise(connectionValue(timing.dns, parentTiming ? parentTiming.dns : -1)) },
+      { label: 'TCP 连接', value: fmtMsPrecise(connectionValue(timing.tcp, parentTiming ? parentTiming.tcp : -1)) },
+      { label: 'TLS 握手', value: fmtMsPrecise(connectionValue(timing.tls, parentTiming ? parentTiming.tls : -1)) },
+      { label: '请求响应(TTFB)', value: fmtMsPrecise(timing.ttfb) },
+      { label: 'RTT Min', value: rttStats ? fmtMsPrecise(rttStats.min) : '-' },
+      { label: 'RTT Median', value: rttStats ? fmtMsPrecise(rttStats.median) : '-' },
+      { label: 'RTT P95', value: rttStats ? fmtMsPrecise(rttStats.p95) : '-' },
+    ]);
+
+    renderCards('#resourceMetrics', [
+      { label: '资源加载', value: fmtMsPrecise(timing.resLoad) },
+      { label: '总耗时', value: fmtMsPrecise(timing.total) },
+      { label: '传输总量', value: fmtBytes(resourceSummary.transfer) },
+      { label: '解压后总量', value: fmtBytes(resourceSummary.decoded) },
+      { label: '资源数量', value: String(resourceSummary.count) },
+    ]);
+
+    renderCards('#renderMetrics', [
+      { label: 'FCP 首帧渲染', value: fmtMsPrecise(timing.fcp) },
+      { label: 'LCP 最大内容', value: fmtMsPrecise(timing.lcp) },
+      { label: 'DOM 解析', value: fmtMsPrecise(timing.domParse) },
+    ]);
+  }
+
+  // --- render resource table ---
+  function shouldShowResource(e) {
+    const n = e.name.toLowerCase();
+    return n.includes('.js') || n.includes('.css') || n.includes('.woff') || n.includes('.woff2') ||
+           (n.includes('.png') && e.transferSize > 50000) ||
+           (n.includes('.svg') && e.transferSize > 50000) ||
+           (n.includes('.webp') && e.transferSize > 50000);
+  }
+
+  function summarizeResources(entries) {
+    const filtered = entries.filter(shouldShowResource);
+    return filtered.reduce(function(acc, e) {
+      acc.count++;
+      acc.transfer += e.transferSize || 0;
+      acc.decoded += e.decodedBodySize || 0;
+      return acc;
+    }, { count: 0, transfer: 0, decoded: 0 });
+  }
+
+  function renderResources(entries) {
+    const filtered = entries.filter(shouldShowResource).sort((a, b) => b.duration - a.duration);
+
+    const maxDur = filtered.length > 0 ? Math.max(...filtered.map(e => e.duration), 1) : 1;
+    let html = '';
+    for (const e of filtered) {
+      const name = e.name.split('/').pop() || e.name;
+      html += '<tr>';
+      html += '<td class="name-cell mono" title="' + e.name + '">' + name + '</td>';
+      html += '<td class="mono">' + (e.transferSize > 0 ? fmtBytes(e.transferSize) : '(缓存)') + '</td>';
+      html += '<td class="mono">' + (e.decodedBodySize > 0 ? fmtBytes(e.decodedBodySize) : '-') + '</td>';
+      html += '<td class="mono">' + fmtMsPrecise(e.duration) + '</td>';
+      html += '<td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:' + (e.duration / maxDur * 100).toFixed(0) + '%"></div></div></td>';
+      html += '</tr>';
+    }
+    if (filtered.length === 0) {
+      html = '<tr class="empty-row"><td colspan="5">暂无资源数据</td></tr>';
+    }
+    $('#resourceBody').innerHTML = html;
+    $('#resourceCount').textContent = filtered.length + ' 项';
+  }
+
+  // --- extract timing ---
+  function extractTiming(perf) {
+    var t = { dns: -1, tcp: -1, tls: -1, ttfb: -1, domParse: -1, resLoad: -1, total: -1 };
+    var nav = (perf.getEntriesByType('navigation') || [])[0];
+    var timing = perf.timing;
+
+    function safeSub(a, b) {
+      if (a == null || b == null || a < 0 || b < 0) return -1;
+      var v = a - b;
+      return v >= 0 ? v : -1;
+    }
+
+    if (nav && nav.fetchStart != null) {
+      t.dns = safeSub(nav.domainLookupEnd, nav.domainLookupStart);
+      t.tcp = safeSub(nav.connectEnd, nav.connectStart);
+      t.tls = nav.secureConnectionStart > 0 ? safeSub(nav.connectEnd, nav.secureConnectionStart) : 0;
+      t.ttfb = safeSub(nav.responseStart, nav.requestStart);
+      t.domParse = safeSub(nav.domInteractive, nav.responseStart);
+      t.resLoad = safeSub(nav.loadEventStart, nav.responseEnd);
+      t.total = safeSub(nav.loadEventStart, nav.fetchStart);
+    } else if (timing && timing.navigationStart != null) {
+      t.dns = safeSub(timing.domainLookupEnd, timing.domainLookupStart);
+      t.tcp = safeSub(timing.connectEnd, timing.connectStart);
+      t.tls = timing.secureConnectionStart > 0 ? safeSub(timing.connectEnd, timing.secureConnectionStart) : 0;
+      t.ttfb = safeSub(timing.responseStart, timing.requestStart);
+      t.domParse = safeSub(timing.domInteractive, timing.responseStart);
+      t.resLoad = safeSub(timing.loadEventStart, timing.responseEnd);
+      t.total = safeSub(timing.loadEventStart, timing.fetchStart);
+    }
+    return t;
+  }
+
+  // --- paint metrics ---
+  function getFCP(perf) {
+    var entries = perf.getEntriesByType('paint') || [];
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].name === 'first-contentful-paint') return entries[i].startTime;
+    }
+    return -1;
+  }
+
+  function collectFCP(win, waitMs) {
+    return new Promise(function(resolve) {
+      if (!win || !win.PerformanceObserver) {
+        resolve(win && win.performance ? getFCP(win.performance) : -1);
+        return;
+      }
+      var supported = win.PerformanceObserver.supportedEntryTypes || [];
+      if (supported.indexOf('paint') === -1) {
+        resolve(win.performance ? getFCP(win.performance) : -1);
+        return;
+      }
+      var fcp = -1;
+      var observer;
+      try {
+        observer = new win.PerformanceObserver(function(list) {
+          var entries = list.getEntries();
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].name === 'first-contentful-paint') {
+              fcp = entries[i].startTime;
+            }
+          }
+        });
+        observer.observe({ type: 'paint', buffered: true });
+      } catch (e) {
+        resolve(win.performance ? getFCP(win.performance) : -1);
+        return;
+      }
+      setTimeout(function() {
+        observer.disconnect();
+        resolve(fcp >= 0 ? fcp : (win.performance ? getFCP(win.performance) : -1));
+      }, waitMs);
+    });
+  }
+
+  function collectLCP(win, waitMs) {
+    return new Promise(function(resolve) {
+      if (!win || !win.PerformanceObserver) {
+        resolve(-1);
+        return;
+      }
+      var supported = win.PerformanceObserver.supportedEntryTypes || [];
+      if (supported.indexOf('largest-contentful-paint') === -1) {
+        resolve(-1);
+        return;
+      }
+      var entries = [];
+      var observer;
+      try {
+        observer = new win.PerformanceObserver(function(list) {
+          var listEntries = list.getEntries();
+          for (var i = 0; i < listEntries.length; i++) {
+            entries.push(listEntries[i]);
+          }
+        });
+        observer.observe({ type: 'largest-contentful-paint', buffered: true });
+      } catch (e) {
+        resolve(-1);
+        return;
+      }
+      setTimeout(function() {
+        observer.disconnect();
+        resolve(entries.length > 0 ? entries[entries.length - 1].startTime : -1);
+      }, waitMs);
+    });
+  }
+
+  // --- main: load and measure ---
+  let reportData = null;
+  const TARGET_URL = '/';
+
+  async function measureRTT(samples) {
+    var values = [];
+    try {
+      await fetch('/debug-ping?warmup=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' });
+    } catch (e) {}
+    for (var i = 0; i < samples; i++) {
+      var path = '/debug-ping?_=' + Date.now() + '-' + i;
+      var url = new URL(path, location.href).href;
+      try {
+        var beforeCount = performance.getEntriesByName(url).length;
+        var res = await fetch(path, {
+          cache: 'no-store',
+          credentials: 'same-origin',
+        });
+        await res.text();
+        var entries = performance.getEntriesByName(url);
+        var entry = entries.length > beforeCount ? entries[entries.length - 1] : entries[entries.length - 1];
+        if (entry && entry.duration >= 0) {
+          values.push(entry.duration);
+        }
+      } catch (e) {}
+    }
+    if (values.length === 0) return null;
+    values.sort(function(a, b) { return a - b; });
+    var p95Index = Math.min(values.length - 1, Math.ceil(values.length * 0.95) - 1);
+    return {
+      min: values[0],
+      max: values[values.length - 1],
+      median: values[Math.floor(values.length / 2)],
+      p95: values[p95Index],
+      samples: values,
+    };
+  }
+
+  function startTest(url) {
+    startTimer();
+    $('#resourceCount').textContent = '0 项 (加载中)';
+    lastResourceCount = 0;
+    $('#resourceBody').innerHTML = '<tr class="empty-row"><td colspan="5">正在加载...</td></tr>';
+    $('#connectionMetrics').innerHTML = '';
+    $('#resourceMetrics').innerHTML = '';
+    $('#renderMetrics').innerHTML = '';
+
+    const iframe = $('#target');
+    const dest = url || TARGET_URL;
+
+    function onLoad() {
+      stopTimer();
+
+      try {
+        const perf = iframe.contentWindow.performance;
+        const timing = extractTiming(perf);
+        timing.fcp = getFCP(perf);
+        timing.lcp = -1;
+        const resources = perf.getEntriesByType('resource');
+        const parentTiming = extractTiming(window.performance);
+        const resourceSummary = summarizeResources(resources);
+
+        renderMetrics(timing, parentTiming, resourceSummary, null);
+        renderResources(resources);
+
+        const actualUrl = (function() {
+          try { return iframe.contentWindow.location.pathname + iframe.contentWindow.location.search; } catch(e) { return iframe.src; }
+        })();
+        const totalElapsed = performance.now() - timerStart;
+
+        reportData = {
+          targetUrl: dest,
+          actualUrl: actualUrl,
+          time: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          device: {
+            cpu: navigator.hardwareConcurrency || 0,
+            memory: navigator.deviceMemory || 0,
+            screen: screen.width + 'x' + screen.height,
+          },
+          timing: timing,
+          parentTiming: parentTiming,
+          rttStats: null,
+          resourceSummary: resourceSummary,
+          iframeLoadMs: totalElapsed,
+          resources: resources.filter(e =>
+            shouldShowResource(e)
+          ).map(e => ({
+            name: e.name.split('/').pop(),
+            size: e.transferSize,
+            decodedSize: e.decodedBodySize,
+            duration: e.duration,
+          })).sort((a, b) => b.duration - a.duration),
+        };
+
+        if (actualUrl !== dest) {
+          $('#timerStatus').innerHTML += ' (重定向到 ' + actualUrl.split('/').pop() + ')';
+        }
+
+        $('#timerStatus').textContent = '加载完成';
+
+        measureRTT(7).then(function(rttStats) {
+          if (!reportData) return;
+          reportData.rttStats = rttStats;
+          renderMetrics(timing, parentTiming, resourceSummary, rttStats);
+        });
+
+        collectLCP(iframe.contentWindow, 3000).then(function(finalLcp) {
+          if (finalLcp > 0 && finalLcp !== timing.lcp) {
+            timing.lcp = finalLcp;
+            reportData.timing.lcp = finalLcp;
+            renderMetrics(timing, parentTiming, resourceSummary, reportData.rttStats);
+          }
+        });
+
+        collectFCP(iframe.contentWindow, 500).then(function(finalFcp) {
+          if (finalFcp >= 0 && finalFcp !== timing.fcp) {
+            timing.fcp = finalFcp;
+            reportData.timing.fcp = finalFcp;
+            renderMetrics(timing, parentTiming, resourceSummary, reportData.rttStats);
+          }
+        });
+
+      } catch (e) {
+        console.error('Failed to read iframe performance:', e);
+        $('#timerStatus').textContent = '无法读取性能数据 (可能非同源，请检查是否通过相同域名访问)';
+      }
+    }
+
+    function onError() {
+      stopTimer();
+      $('#timerStatus').textContent = 'iframe 加载失败';
+    }
+
+    iframe.onload = onLoad;
+    iframe.onerror = onError;
+    iframe.src = dest;
+  }
+
+  function retest() {
+    const base = TARGET_URL;
+    const sep = base.includes('?') ? '&' : '?';
+    const cacheBust = base + sep + '_t=' + Date.now();
+    startTest(cacheBust);
+  }
+
+  // --- copy report ---
+  function copyReport() {
+    if (!reportData) {
+      showToast('请等待测试完成后再复制报告');
+      return;
+    }
+    const d = reportData;
+    let text = '';
+    text += '=== Performance Report ===\n';
+    text += 'Target URL:  ' + d.targetUrl + '\n';
+    text += 'Actual URL:  ' + d.actualUrl + '\n';
+    if (d.actualUrl !== d.targetUrl) {
+      text += '(注意: 页面被重定向了，请先确保已登录再测试)\n';
+    }
+    text += 'Time: ' + d.time + '\n';
+    text += 'Device: ' + d.device.cpu + ' cores / ' + d.device.memory + ' GB / ' + d.device.screen + '\n';
+    text += 'UA: ' + d.userAgent + '\n\n';
+
+    const t = d.timing || {};
+    const pt = d.parentTiming || {};
+
+    function reportConnectionValue(value, parentValue) {
+      if (value > 0) return fmtMsPrecise(value);
+      if (parentValue >= 0) return fmtMsPrecise(parentValue);
+      if (value >= 0) return fmtMsPrecise(value);
+      return '-';
+    }
+
+    text += '--- Connection ---\n';
+    text += 'DNS Lookup:     ' + reportConnectionValue(t.dns, pt.dns) + '\n';
+    text += 'TCP Connect:    ' + reportConnectionValue(t.tcp, pt.tcp) + '\n';
+    text += 'TLS Handshake:  ' + reportConnectionValue(t.tls, pt.tls) + '\n';
+    text += 'TTFB:           ' + (t.ttfb >= 0 ? fmtMsPrecise(t.ttfb) : '-') + '\n';
+    if (d.rttStats) {
+      text += 'RTT Min:        ' + fmtMsPrecise(d.rttStats.min) + '\n';
+      text += 'RTT Median:     ' + fmtMsPrecise(d.rttStats.median) + '\n';
+      text += 'RTT P95:        ' + fmtMsPrecise(d.rttStats.p95) + '\n';
+      text += 'RTT Samples:    ' + d.rttStats.samples.map(fmtMsPrecise).join(', ') + '\n';
+    }
+
+    text += '\n--- Resource Loading ---\n';
+    text += 'Resource Load:  ' + (t.resLoad >= 0 ? fmtMsPrecise(t.resLoad) : '-') + '\n';
+    text += 'Navigation Timing Total: ' + (t.total >= 0 ? fmtMsPrecise(t.total) : '-') + '\n';
+    text += 'Total transfer: ' + fmtBytes(d.resourceSummary.transfer) + '\n';
+    text += 'Total decoded:  ' + fmtBytes(d.resourceSummary.decoded) + '\n';
+    text += 'Resource count: ' + d.resourceSummary.count + '\n';
+
+    text += '\n--- Rendering ---\n';
+    text += 'FCP:            ' + (t.fcp >= 0 ? fmtMsPrecise(t.fcp) : '-') + '\n';
+    text += 'LCP:            ' + (t.lcp >= 0 ? fmtMsPrecise(t.lcp) : '-') + '\n';
+    text += 'DOM Parse:      ' + (t.domParse >= 0 ? fmtMsPrecise(t.domParse) : '-') + '\n';
+    text += 'Iframe Load:    ' + fmtMsPrecise(d.iframeLoadMs) + '\n\n';
+
+    text += '--- Resources (传输/解压后) ---\n';
+    let totalSize = 0, totalDecoded = 0;
+    for (const r of d.resources) {
+      const sz = fmtBytes(r.size).padStart(9);
+      const dz = fmtBytes(r.decodedSize).padStart(10);
+      text += r.name.padEnd(42) + ' ' + sz + ' ' + dz + '  ' + fmtMsPrecise(r.duration).padStart(9) + '\n';
+      totalSize += r.size || 0;
+      totalDecoded += r.decodedSize || 0;
+    }
+    text += '\nTotal transfer: ' + fmtBytes(totalSize) + '  (解压后: ' + fmtBytes(totalDecoded) + ')\n';
+
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('已复制到剪贴板');
+    }).catch(() => {
+      showToast('复制失败，请查看控制台');
+      console.log(text);
+    });
+  }
+
+  function showToast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+
+  // --- init ---
+  document.getElementById('retestBtn').addEventListener('click', retest);
+  document.getElementById('copyReportBtn').addEventListener('click', copyReport);
+  startTest();
+})();
+</script>
+</body>
+</html>
