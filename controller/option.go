@@ -264,6 +264,38 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "general_setting.open_webui_hidden_groups":
+		value := strings.TrimSpace(option.Value.(string))
+		if value == "" {
+			value = "[]"
+		}
+		var groups []string
+		if err = common.UnmarshalJsonStr(value, &groups); err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "Open WebUI 分组黑名单格式错误",
+			})
+			return
+		}
+		normalizedGroups := make([]string, 0, len(groups))
+		seenGroups := make(map[string]struct{}, len(groups))
+		for _, group := range groups {
+			group = strings.TrimSpace(group)
+			if group == "" {
+				continue
+			}
+			if _, ok := seenGroups[group]; ok {
+				continue
+			}
+			seenGroups[group] = struct{}{}
+			normalizedGroups = append(normalizedGroups, group)
+		}
+		bytes, err := common.Marshal(normalizedGroups)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		option.Value = string(bytes)
 	case "console_setting.api_info":
 		err = console_setting.ValidateConsoleSettings(option.Value.(string), "ApiInfo")
 		if err != nil {

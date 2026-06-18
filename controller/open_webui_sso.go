@@ -216,6 +216,7 @@ func effectiveOpenWebUITokenGroup(user *model.User, token *model.Token) string {
 }
 
 func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[string]openWebUIGroup {
+	hiddenGroups := openWebUIHiddenGroupSet()
 	effectiveGroup := currentGroup
 	if effectiveGroup == "" {
 		effectiveGroup = strings.TrimSpace(user.Group)
@@ -224,7 +225,7 @@ func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[stri
 	if _, ok := usableGroups["auto"]; !ok && (currentGroup == "auto" || setting.DefaultUseAutoGroup) && len(service.GetUserAutoGroup(user.Group)) > 0 {
 		usableGroups["auto"] = setting.GetUsableGroupDescription("auto")
 	}
-	if effectiveGroup != "" {
+	if effectiveGroup != "" && !openWebUIGroupHiddenInSet(effectiveGroup, hiddenGroups) {
 		if _, ok := usableGroups[effectiveGroup]; !ok {
 			usableGroups[effectiveGroup] = setting.GetUsableGroupDescription(effectiveGroup)
 		}
@@ -236,6 +237,9 @@ func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[stri
 
 	groupRatios := ratio_setting.GetGroupRatioCopy()
 	for groupID, desc := range usableGroups {
+		if openWebUIGroupHiddenInSet(groupID, hiddenGroups) {
+			continue
+		}
 		if groupID == "auto" {
 			groups[groupID] = openWebUIGroup{
 				Desc: setting.GetUsableGroupDescription("auto"),
@@ -252,6 +256,31 @@ func openWebUITokenGroupsForUser(user *model.User, currentGroup string) map[stri
 		}
 	}
 	return groups
+}
+
+func openWebUIHiddenGroupSet() map[string]struct{} {
+	hiddenGroups := operation_setting.GetGeneralSetting().OpenWebUIHiddenGroups
+	groups := make(map[string]struct{}, len(hiddenGroups))
+	for _, groupID := range hiddenGroups {
+		groupID = strings.TrimSpace(groupID)
+		if groupID != "" {
+			groups[groupID] = struct{}{}
+		}
+	}
+	return groups
+}
+
+func openWebUIGroupHiddenInSet(groupID string, hiddenGroups map[string]struct{}) bool {
+	groupID = strings.TrimSpace(groupID)
+	if groupID == "" {
+		return false
+	}
+	_, hidden := hiddenGroups[groupID]
+	return hidden
+}
+
+func openWebUIGroupHidden(groupID string) bool {
+	return openWebUIGroupHiddenInSet(groupID, openWebUIHiddenGroupSet())
 }
 
 func configuredOpenWebUITokenGroupForUser(user *model.User) (string, error) {
@@ -466,6 +495,9 @@ func buildOpenWebUITokenGroupResponse(user *model.User, token *model.Token) gin.
 func openWebUITokenGroupAllowed(user *model.User, groupID string) bool {
 	if groupID == "" {
 		return true
+	}
+	if openWebUIGroupHidden(groupID) {
+		return false
 	}
 	if groupID == "auto" {
 		return len(service.GetUserAutoGroup(user.Group)) > 0

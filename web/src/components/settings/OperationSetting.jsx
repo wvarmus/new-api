@@ -43,6 +43,7 @@ const OperationSetting = () => {
     'general_setting.open_webui_url': '',
     'general_setting.open_webui_origin': '',
     'general_setting.open_webui_token_group': '',
+    'general_setting.open_webui_hidden_groups': '[]',
     'general_setting.open_webui_sso_ttl_seconds': 0,
     'general_setting.open_webui_sso_secret': '',
     QuotaPerUnit: 0,

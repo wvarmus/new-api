@@ -43,6 +43,53 @@ import { StatusContext } from '../../../context/Status';
 
 const { Text } = Typography;
 
+const openWebUIHiddenGroupsKey = 'general_setting.open_webui_hidden_groups';
+
+function normalizeOpenWebUIHiddenGroups(value) {
+  let groups = [];
+  if (Array.isArray(value)) {
+    groups = value;
+  } else if (typeof value === 'string' && value.trim() !== '') {
+    try {
+      const parsed = JSON.parse(value);
+      groups = Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      groups = [];
+    }
+  }
+
+  const seen = new Set();
+  return groups
+    .map((group) => String(group).trim())
+    .filter((group) => {
+      if (!group || seen.has(group)) return false;
+      seen.add(group);
+      return true;
+    });
+}
+
+function stringifyOpenWebUIHiddenGroups(value) {
+  return JSON.stringify(normalizeOpenWebUIHiddenGroups(value));
+}
+
+function comparableGeneralSettingsInputs(value) {
+  return {
+    ...value,
+    [openWebUIHiddenGroupsKey]: stringifyOpenWebUIHiddenGroups(
+      value[openWebUIHiddenGroupsKey],
+    ),
+  };
+}
+
+function renderOpenWebUISelectedText(optionNode, emptyValueText = '') {
+  if (!optionNode) return '';
+  if (Object.prototype.hasOwnProperty.call(optionNode, 'value')) {
+    const value = String(optionNode.value ?? '');
+    return value || emptyValueText;
+  }
+  return String(optionNode.label ?? '');
+}
+
 export default function GeneralSettings(props) {
   const { t } = useTranslation();
   const [statusState, statusDispatch] = useContext(StatusContext);
@@ -56,6 +103,7 @@ export default function GeneralSettings(props) {
     'general_setting.open_webui_url': '',
     'general_setting.open_webui_origin': '',
     'general_setting.open_webui_token_group': '',
+    [openWebUIHiddenGroupsKey]: [],
     'general_setting.open_webui_sso_ttl_seconds': 0,
     'general_setting.open_webui_sso_secret': '',
     'general_setting.quota_display_type': 'USD',
@@ -80,11 +128,16 @@ export default function GeneralSettings(props) {
   }
 
   function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
+    const updateArray = compareObjects(
+      comparableGeneralSettingsInputs(inputs),
+      comparableGeneralSettingsInputs(inputsRow),
+    );
     if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
     const requestQueue = updateArray.map((item) => {
       let value = '';
-      if (typeof inputs[item.key] === 'boolean') {
+      if (item.key === openWebUIHiddenGroupsKey) {
+        value = stringifyOpenWebUIHiddenGroups(inputs[item.key]);
+      } else if (typeof inputs[item.key] === 'boolean') {
         value = String(inputs[item.key]);
       } else {
         value = inputs[item.key];
@@ -190,6 +243,11 @@ export default function GeneralSettings(props) {
 
   const quotaDisplayType = inputs['general_setting.quota_display_type'];
 
+  const openWebUIHiddenGroupOptions = useMemo(
+    () => openWebUIGroupOptions.filter((option) => option.value !== ''),
+    [openWebUIGroupOptions],
+  );
+
   const loadOpenWebUIGroups = async () => {
     const res = await API.get('/api/user/self/groups');
     const { success, message, data } = res.data;
@@ -267,7 +325,10 @@ export default function GeneralSettings(props) {
     const currentInputs = {};
     for (let key in props.options) {
       if (Object.keys(inputs).includes(key)) {
-        currentInputs[key] = props.options[key];
+        currentInputs[key] =
+          key === openWebUIHiddenGroupsKey
+            ? normalizeOpenWebUIHiddenGroups(props.options[key])
+            : props.options[key];
       }
     }
     // 若旧字段存在且新字段缺失，则做一次兜底映射
@@ -291,6 +352,9 @@ export default function GeneralSettings(props) {
     ) {
       currentInputs['general_setting.custom_currency_exchange_rate'] =
         props.options['general_setting.custom_currency_exchange_rate'];
+    }
+    if (currentInputs[openWebUIHiddenGroupsKey] === undefined) {
+      currentInputs[openWebUIHiddenGroupsKey] = [];
     }
     currentInputs['general_setting.open_webui_sso_secret'] = '';
     setInputs(currentInputs);
@@ -427,6 +491,8 @@ export default function GeneralSettings(props) {
                 </Text>
               </Col>
             </Row>
+          </Form.Section>
+          <Form.Section text={t('对话站设置')}>
             <Row gutter={16}>
               <Col span={24}>
                 <Banner
@@ -474,7 +540,7 @@ export default function GeneralSettings(props) {
                   optionList={openWebUIGroupOptions}
                   renderOptionItem={renderGroupOption}
                   renderSelectedItem={(optionNode) =>
-                    optionNode?.value ? optionNode.value : t('用户分组')
+                    renderOpenWebUISelectedText(optionNode, t('用户分组'))
                   }
                   extraText={t(
                     '仅影响新创建的 Open WebUI 专用令牌 chat-default；留空表示默认使用用户所在分组',
@@ -482,6 +548,29 @@ export default function GeneralSettings(props) {
                   onChange={(value) => {
                     handleFieldChange('general_setting.open_webui_token_group')(
                       value ?? '',
+                    );
+                  }}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Select
+                  field={openWebUIHiddenGroupsKey}
+                  label={t('Open WebUI 分组黑名单')}
+                  placeholder={t('选择不在 Open WebUI 显示的分组')}
+                  multiple
+                  optionList={openWebUIHiddenGroupOptions}
+                  renderOptionItem={renderGroupOption}
+                  renderSelectedItem={(optionNode) => ({
+                    isRenderInTag: true,
+                    content: renderOpenWebUISelectedText(optionNode),
+                  })}
+                  extraText={t(
+                    '被选中的分组不会出现在 Open WebUI 分组列表中，也不能通过 Open WebUI 切换到这些分组',
+                  )}
+                  onChange={(value) => {
+                    handleFieldChange(openWebUIHiddenGroupsKey)(
+                      Array.isArray(value) ? value : [],
                     );
                   }}
                   showClear
@@ -516,6 +605,8 @@ export default function GeneralSettings(props) {
                 />
               </Col>
             </Row>
+          </Form.Section>
+          <Form.Section text={t('其他通用设置')}>
             <Row gutter={16}>
               <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                 <Form.Switch
@@ -574,12 +665,12 @@ export default function GeneralSettings(props) {
                 />
               </Col>
             </Row>
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存通用设置')}
-              </Button>
-            </Row>
           </Form.Section>
+          <Row>
+            <Button size='default' onClick={onSubmit}>
+              {t('保存设置')}
+            </Button>
+          </Row>
         </Form>
       </Spin>
 
