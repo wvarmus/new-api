@@ -10,6 +10,7 @@ import (
 )
 
 const openWebUIIntegrationTokenEnv = "NEW_API_OPEN_WEBUI_TOKEN"
+const defaultOpenWebUIIntegrationToken = "new-api-open-webui-integration-token"
 
 func OpenWebUIIntegrationAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -27,10 +28,7 @@ func TrustedOpenWebUIIntegrationRequest(c *gin.Context) bool {
 		return false
 	}
 
-	expectedToken := strings.TrimSpace(os.Getenv(openWebUIIntegrationTokenEnv))
-	if expectedToken == "" {
-		return false
-	}
+	expectedToken := expectedOpenWebUIIntegrationToken()
 
 	providedToken := bearerToken(c.GetHeader("Authorization"))
 	if len(providedToken) != len(expectedToken) {
@@ -38,6 +36,13 @@ func TrustedOpenWebUIIntegrationRequest(c *gin.Context) bool {
 	}
 
 	return subtle.ConstantTimeCompare([]byte(providedToken), []byte(expectedToken)) == 1
+}
+
+func expectedOpenWebUIIntegrationToken() string {
+	if token := strings.TrimSpace(os.Getenv(openWebUIIntegrationTokenEnv)); token != "" {
+		return token
+	}
+	return defaultOpenWebUIIntegrationToken
 }
 
 func IsOpenWebUIIntegrationPath(path string) bool {

@@ -34,6 +34,19 @@ func TestTrustedOpenWebUIIntegrationRequestRejectsInvalidToken(t *testing.T) {
 	}
 }
 
+func TestTrustedOpenWebUIIntegrationRequestUsesDefaultToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	t.Setenv(openWebUIIntegrationTokenEnv, "")
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/open-webui/sso/verify", nil)
+	ctx.Request.Header.Set("Authorization", "Bearer "+defaultOpenWebUIIntegrationToken)
+
+	if !TrustedOpenWebUIIntegrationRequest(ctx) {
+		t.Fatal("expected default Open WebUI integration token to be trusted")
+	}
+}
+
 func TestOpenWebUIIntegrationPathMatchesPrefix(t *testing.T) {
 	if !IsOpenWebUIIntegrationPath("/api/open-webui/avatar/1") {
 		t.Fatal("expected Open WebUI prefix path to match")
