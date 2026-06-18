@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -280,6 +281,65 @@ func TestGeminiStreamHandlerUsesEstimatedPromptTokensWhenUsagePromptMissing(t *t
 	require.Equal(t, 20, usage.PromptTokens)
 	require.Equal(t, 100, usage.CompletionTokens)
 	require.Equal(t, 110, usage.TotalTokens)
+}
+
+func TestGeminiChatStreamHandlerClaudeToolUse(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	oldStreamingTimeout := constant.StreamingTimeout
+	constant.StreamingTimeout = 300
+	t.Cleanup(func() {
+		constant.StreamingTimeout = oldStreamingTimeout
+	})
+
+	info := &relaycommon.RelayInfo{
+		RelayFormat:     types.RelayFormatClaude,
+		OriginModelName: "gemini-2.5-flash",
+		ClaudeConvertInfo: &relaycommon.ClaudeConvertInfo{
+			LastMessagesType: relaycommon.LastMessageTypeNone,
+		},
+		ChannelMeta: &relaycommon.ChannelMeta{
+			UpstreamModelName: "gemini-2.5-flash",
+		},
+	}
+
+	chunk := dto.GeminiChatResponse{
+		Candidates: []dto.GeminiChatCandidate{
+			{
+				Content: dto.GeminiChatContent{
+					Role: "model",
+					Parts: []dto.GeminiPart{
+						{
+							FunctionCall: &dto.FunctionCall{
+								FunctionName: "lookup",
+								Arguments: map[string]any{
+									"query": "weather",
+								},
+							},
+						},
+					},
+				},
+				FinishReason: common.GetPointer("STOP"),
+			},
+		},
+		UsageMetadata: dto.GeminiUsageMetadata{TotalTokenCount: 1},
+	}
+	chunkData, err := common.Marshal(chunk)
+	require.NoError(t, err)
+	streamBody := []byte("data: " + string(chunkData) + "\n" + "data: [DONE]\n")
+	resp := &http.Response{Body: io.NopCloser(bytes.NewReader(streamBody))}
+
+	usage, newAPIError := GeminiChatStreamHandler(c, info, resp)
+
+	require.Nil(t, newAPIError)
+	require.NotNil(t, usage)
+	body := recorder.Body.String()
+	require.Contains(t, body, `"type":"tool_use"`)
+	require.Contains(t, body, `"name":"lookup"`)
+	require.True(t, strings.Contains(body, `"partial_json":"{\"query\":\"weather\"}"`) || strings.Contains(body, `"partial_json":"{\"query\": \"weather\"}"`))
 }
 
 func TestGeminiTextGenerationHandlerUsesEstimatedPromptTokensWhenUsagePromptMissing(t *testing.T) {
