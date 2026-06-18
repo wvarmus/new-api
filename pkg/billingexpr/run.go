@@ -54,6 +54,7 @@ func runProgram(prog *vm.Program, params TokenParams, request RequestInput) (flo
 	env := map[string]interface{}{
 		"p":    params.P,
 		"c":    params.C,
+		"len":  params.Len,
 		"cr":   params.CR,
 		"cc":   params.CC,
 		"cc1h": params.CC1h,

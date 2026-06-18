@@ -35,6 +35,14 @@ func BuildTieredTokenParams(usage *dto.Usage, isClaudeUsageSemantic bool, usedVa
 	imgO := float64(usage.CompletionTokenDetails.ImageTokens)
 	ao := float64(usage.CompletionTokenDetails.AudioTokens)
 
+	// Len 需要在 p 被扣减之前保存原始 input 长度。
+	// GPT/OpenAI：raw PromptTokens
+	// Claude：PromptTokens + cache read + cache creation（因为 Claude 的 prompt_tokens 不含 cache）
+	inputLen := p
+	if isClaudeUsageSemantic {
+		inputLen += cr + cc5m + cc1h
+	}
+
 	if !isClaudeUsageSemantic {
 		if usedVars["cr"] {
 			p -= cr
@@ -69,6 +77,7 @@ func BuildTieredTokenParams(usage *dto.Usage, isClaudeUsageSemantic bool, usedVa
 	return billingexpr.TokenParams{
 		P:    p,
 		C:    c,
+		Len:  inputLen,
 		CR:   cr,
 		CC:   cc5m,
 		CC1h: cc1h,
