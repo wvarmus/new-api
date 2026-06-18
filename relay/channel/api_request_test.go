@@ -10,6 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestApplyUpstreamContentLength(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodPost, "https://example.com/v1/messages", nil)
+	req.ContentLength = 0
+	info := &relaycommon.RelayInfo{UpstreamRequestBodySize: 17}
+
+	applyUpstreamContentLength(req, info)
+
+	require.Equal(t, int64(17), req.ContentLength)
+}
+
 func TestProcessHeaderOverride_ChannelTestSkipsPassthroughRules(t *testing.T) {
 	t.Parallel()
 
