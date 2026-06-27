@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { API, copy, showSuccess } from '../../helpers';
+import { API, copy, formatCeilPriceAmount, showSuccess } from '../../helpers';
 import { Modal } from '@douyinfe/semi-ui';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
@@ -180,18 +180,26 @@ export const useModelPricingData = () => {
     [selectedRowKeys],
   );
 
-  const displayPrice = (usdPrice) => {
+  const displayPrice = (
+    usdPrice,
+    { precision = 2, roundUp = true } = {},
+  ) => {
     let priceInUSD = usdPrice;
     if (showWithRecharge) {
       priceInUSD = (usdPrice * priceRate) / usdExchangeRate;
     }
 
+    const formatAmount = (amount) =>
+      roundUp
+        ? formatCeilPriceAmount(amount, precision)
+        : Number(amount || 0).toFixed(precision);
+
     if (currency === 'CNY') {
-      return `¥${(priceInUSD * usdExchangeRate).toFixed(3)}`;
+      return `¥${formatAmount(priceInUSD * usdExchangeRate)}`;
     } else if (currency === 'CUSTOM') {
-      return `${customCurrencySymbol}${(priceInUSD * customExchangeRate).toFixed(3)}`;
+      return `${customCurrencySymbol}${formatAmount(priceInUSD * customExchangeRate)}`;
     }
-    return `$${priceInUSD.toFixed(3)}`;
+    return `$${formatAmount(priceInUSD)}`;
   };
 
   const setModelsFormat = (models, groupRatio, vendorMap) => {

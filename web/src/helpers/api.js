@@ -22,6 +22,7 @@ import {
   showError,
   formatMessageForAPI,
   isValidMessage,
+  formatGroupDisplayName,
 } from './utils';
 import axios from 'axios';
 import { MESSAGE_ROLES } from '../constants/playground.constants';
@@ -217,6 +218,7 @@ export const processGroupsData = (data, userGroup) => {
     label:
       info.desc.length > 20 ? info.desc.substring(0, 20) + '...' : info.desc,
     value: group,
+    displayName: formatGroupDisplayName(group),
     ratio: info.ratio,
     fullLabel: info.desc,
   }));

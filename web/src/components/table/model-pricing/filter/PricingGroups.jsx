@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import PricingFilterChips from './PricingFilterChips';
+import { formatGroupDisplayName } from '../../../../helpers';
 
 const PricingGroups = ({
   filterGroup,
@@ -35,7 +36,7 @@ const PricingGroups = ({
 
   const items = groups.map((group) => ({
     value: group,
-    label: group === 'all' ? t('全部分组') : group,
+    label: group === 'all' ? t('全部分组') : formatGroupDisplayName(group),
     tagCount:
       group === 'all'
         ? models.length

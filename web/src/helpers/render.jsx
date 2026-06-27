@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import i18next from 'i18next';
 import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
-import { copy, showSuccess } from './utils';
+import { copy, showSuccess, formatGroupDisplayName } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import {
   BILLING_VARS,
@@ -863,7 +863,7 @@ export function renderGroup(group) {
             }
           }}
         >
-          {group}
+          {formatGroupDisplayName(group)}
         </Tag>
       ))}
     </span>
@@ -1034,7 +1034,7 @@ export const renderGroupOption = (item) => {
           ellipsis={{ showTooltip: true }}
           style={{ maxWidth: '100%' }}
         >
-          {value}
+          {item.displayName || formatGroupDisplayName(value)}
         </Typography.Text>
         <Typography.Text
           type='secondary'

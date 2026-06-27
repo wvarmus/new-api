@@ -20,7 +20,11 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Avatar, Tag, Table, Typography } from '@douyinfe/semi-ui';
 import { IconPriceTag } from '@douyinfe/semi-icons';
-import { parseTiersFromExpr, getCurrencyConfig } from '../../../../../helpers';
+import {
+  parseTiersFromExpr,
+  getCurrencyConfig,
+  formatCeilPriceAmount,
+} from '../../../../../helpers';
 import { BILLING_VARS } from '../../../../../constants';
 import {
   splitBillingExprAndRequestRules,
@@ -133,7 +137,12 @@ export default function DynamicPricingBreakdown({ billingExpr, t }) {
       .map(([field, label]) => ({
         title: `${t(label)} (${symbol}/1M tokens)`,
         dataIndex: field,
-        render: (v) => v > 0 ? <Text strong>{`${symbol}${(v * rate).toFixed(4)}`}</Text> : '-',
+        render: (v) =>
+          v > 0 ? (
+            <Text strong>{`${symbol}${formatCeilPriceAmount(v * rate)}`}</Text>
+          ) : (
+            '-'
+          ),
       })),
   ];
 
