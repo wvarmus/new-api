@@ -111,6 +111,35 @@ import {
   SiX,
 } from 'react-icons/si';
 
+function XiaomiMiMoIcon({ size = 14 }) {
+  const iconSize = Number(size) > 0 ? Number(size) : 14;
+  const fontSize = Math.max(Math.round(iconSize * 0.52), 9);
+  return (
+    <span
+      aria-label='Xiaomi MiMo'
+      title='Xiaomi MiMo'
+      style={{
+        alignItems: 'center',
+        background: '#ff6900',
+        borderRadius: Math.max(Math.round(iconSize * 0.22), 3),
+        color: '#fff',
+        display: 'inline-flex',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize,
+        fontWeight: 700,
+        height: iconSize,
+        justifyContent: 'center',
+        lineHeight: 1,
+        minWidth: iconSize,
+        padding: 0,
+        width: iconSize,
+      }}
+    >
+      Mi
+    </span>
+  );
+}
+
 // 获取侧边栏Lucide图标组件
 export function getLucideIcon(key, selected = false) {
   const size = 16;
@@ -447,6 +476,9 @@ export function getLobeHubIcon(iconName, size = 14) {
   // 解析组件路径与点号链式属性
   const segments = String(iconName).split('.');
   const baseKey = segments[0];
+  if (baseKey === 'XiaomiMiMo') {
+    return <XiaomiMiMoIcon size={size} />;
+  }
   const BaseIcon = LobeIcons[baseKey];
 
   let IconComponent = undefined;

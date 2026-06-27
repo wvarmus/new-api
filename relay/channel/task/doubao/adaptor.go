@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -121,7 +122,7 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 
 // BuildRequestURL constructs the upstream URL.
 func (a *TaskAdaptor) BuildRequestURL(_ *relaycommon.RelayInfo) (string, error) {
-	return fmt.Sprintf("%s/api/v3/contents/generations/tasks", a.baseURL), nil
+	return doubaoVideoTaskURL(a.baseURL, ""), nil
 }
 
 // BuildRequestHeader sets required headers.
@@ -241,7 +242,7 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 		return nil, fmt.Errorf("invalid task_id")
 	}
 
-	uri := fmt.Sprintf("%s/api/v3/contents/generations/tasks/%s", baseUrl, taskID)
+	uri := doubaoVideoTaskURL(baseUrl, taskID)
 
 	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
@@ -257,6 +258,25 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 		return nil, fmt.Errorf("new proxy http client failed: %w", err)
 	}
 	return client.Do(req)
+}
+
+func doubaoVideoTaskAPIBaseURL(baseURL string) string {
+	base := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	lowered := strings.ToLower(base)
+	for _, suffix := range []string{"/api/plan/v3", "/api/v3"} {
+		if strings.HasSuffix(lowered, suffix) {
+			return base
+		}
+	}
+	return fmt.Sprintf("%s/api/v3", base)
+}
+
+func doubaoVideoTaskURL(baseURL string, taskID string) string {
+	uri := fmt.Sprintf("%s/contents/generations/tasks", doubaoVideoTaskAPIBaseURL(baseURL))
+	if taskID == "" {
+		return uri
+	}
+	return fmt.Sprintf("%s/%s", uri, taskID)
 }
 
 func (a *TaskAdaptor) GetModelList() []string {
