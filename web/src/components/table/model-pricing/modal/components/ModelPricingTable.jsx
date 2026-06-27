@@ -22,6 +22,7 @@ import { Avatar, Typography, Tag } from '@douyinfe/semi-ui';
 import { IconCoinMoneyStroked } from '@douyinfe/semi-icons';
 import {
   calculateModelPrice,
+  formatGroupDisplayName,
   getModelPriceItems,
 } from '../../../../../helpers';
 
@@ -78,6 +79,7 @@ const ModelPricingTable = ({
     return {
       key: group,
       group,
+      displayGroup: formatGroupDisplayName(group),
       description: usableGroup?.[group] || t('暂无分组描述'),
       billingType,
       billingColor: getBillingColor(billingType),
@@ -218,7 +220,7 @@ const ModelPricingTable = ({
               <div className='model-group-price-header'>
                 <div className='model-group-title-block'>
                   <div className='model-group-title'>
-                    <span>{item.group}</span>
+                    <span>{item.displayGroup}</span>
                   </div>
                 </div>
                 <Tag

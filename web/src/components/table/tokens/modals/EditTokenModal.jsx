@@ -30,6 +30,7 @@ import {
   selectFilter,
   calculateModelPrice,
   getModelPriceItems,
+  formatGroupDisplayName,
 } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
@@ -454,6 +455,7 @@ const EditTokenModal = (props) => {
       let localGroupOptions = Object.entries(data).map(([group, info]) => ({
         label: info.desc,
         value: group,
+        displayName: formatGroupDisplayName(group),
       }));
       if (statusState?.status?.default_use_auto_group) {
         if (localGroupOptions.some((group) => group.value === 'auto')) {
@@ -769,6 +771,7 @@ const EditTokenModal = (props) => {
                           const q = input.toLowerCase();
                           return (
                             option.value?.toLowerCase().includes(q) ||
+                            option.displayName?.toLowerCase().includes(q) ||
                             (typeof option.label === 'string' &&
                               option.label.toLowerCase().includes(q))
                           );
@@ -777,7 +780,8 @@ const EditTokenModal = (props) => {
                         style={{ width: '100%' }}
                         dropdownClassName='token-group-select-dropdown'
                         renderSelectedItem={(optionNode) =>
-                          optionNode?.value || ''
+                          optionNode?.displayName ||
+                          formatGroupDisplayName(optionNode?.value || '')
                         }
                       />
                     ) : (
@@ -1183,7 +1187,7 @@ const EditTokenModal = (props) => {
                       >
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <Text strong className='text-base'>
-                            {option.group}
+                            {formatGroupDisplayName(option.group)}
                           </Text>
                           <Space wrap>
                             {active && (

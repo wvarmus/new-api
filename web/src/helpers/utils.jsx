@@ -602,12 +602,46 @@ export const selectFilter = (input, option) => {
   const keyword = input.trim().toLowerCase();
   const valueText = (option?.value ?? '').toString().toLowerCase();
   const labelText = (option?.label ?? '').toString().toLowerCase();
+  const displayText = (option?.displayName ?? '').toString().toLowerCase();
 
-  return valueText.includes(keyword) || labelText.includes(keyword);
+  return (
+    valueText.includes(keyword) ||
+    labelText.includes(keyword) ||
+    displayText.includes(keyword)
+  );
+};
+
+// -------------------------------
+// Infistar 分组展示别名：只改变前台显示，不改变真实分组 key。
+export const formatGroupDisplayName = (groupName = '') => {
+  if (typeof groupName !== 'string') return groupName;
+  const normalized = groupName.trim();
+  const aliasMap = {
+    'ClaudeCode-标准': 'Claude-标准',
+    'ClaudeCode-企业': 'Claude-优选',
+    'Codex-标准': 'ChatGPT-标准',
+    'Codex-企业': 'ChatGPT-优选',
+  };
+  if (aliasMap[normalized]) return aliasMap[normalized];
+  return normalized.replace(/企业$/, '优选').replace(/精选$/, '优选');
 };
 
 // -------------------------------
 // 模型定价计算工具函数
+export const ceilPriceAmount = (value, digits = 2) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric === 0) {
+    return 0;
+  }
+  const factor = 10 ** digits;
+  const sign = Math.sign(numeric);
+  const abs = Math.abs(numeric);
+  return (sign * Math.ceil((abs - 1e-12) * factor)) / factor;
+};
+
+export const formatCeilPriceAmount = (value, digits = 2) =>
+  ceilPriceAmount(value, digits).toFixed(digits);
+
 export const calculateModelPrice = ({
   record,
   selectedGroup,
@@ -616,7 +650,7 @@ export const calculateModelPrice = ({
   displayPrice,
   currency,
   quotaDisplayType = 'USD',
-  precision = 4,
+  precision = 2,
 }) => {
   // 1. 选择实际使用的分组
   let usedGroup = selectedGroup;
@@ -705,10 +739,13 @@ export const calculateModelPrice = ({
     }
 
     const formatTokenPrice = (priceUSD) => {
-      const rawDisplayPrice = displayPrice(priceUSD);
+      const rawDisplayPrice = displayPrice(priceUSD, {
+        precision: 8,
+        roundUp: false,
+      });
       const numericPrice =
         parseFloat(rawDisplayPrice.replace(/[^0-9.]/g, '')) / unitDivisor;
-      return `${symbol}${numericPrice.toFixed(precision)}`;
+      return `${symbol}${formatCeilPriceAmount(numericPrice, precision)}`;
     };
 
     const inputPrice = formatTokenPrice(inputRatioPriceUSD);
@@ -957,7 +994,7 @@ export const formatDynamicPriceSummary = (billingExpr, t, groupRatio = 1) => {
           {varLabels.map(([key, label]) =>
             key in varCoeffs ? (
               <span key={key} style={lineStyle}>
-                {`${t(label)} ${symbol}${(varCoeffs[key] * gr * rate).toFixed(4)}${unitSuffix}`}
+                {`${t(label)} ${symbol}${formatCeilPriceAmount(varCoeffs[key] * gr * rate)}${unitSuffix}`}
               </span>
             ) : null,
           )}

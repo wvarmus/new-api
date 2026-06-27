@@ -34,6 +34,7 @@ import {
 import {
   stringToColor,
   calculateModelPrice,
+  formatGroupDisplayName,
   formatDynamicPriceSummary,
   getModelPriceItems,
   getLobeHubIcon,
@@ -426,7 +427,8 @@ const PricingCardView = ({
                     <span>
                       {priceData.usedGroup === 'all'
                         ? t('最优分组')
-                        : priceData.usedGroup || t('默认分组')}
+                        : formatGroupDisplayName(priceData.usedGroup) ||
+                          t('默认分组')}
                     </span>
                     <strong>{priceData?.usedGroupRatio ?? 1}x</strong>
                   </div>
