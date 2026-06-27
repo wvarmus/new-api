@@ -636,7 +636,12 @@ export const ceilPriceAmount = (value, digits = 2) => {
   const factor = 10 ** digits;
   const sign = Math.sign(numeric);
   const abs = Math.abs(numeric);
-  return (sign * Math.ceil((abs - 1e-12) * factor)) / factor;
+  const rounded = Math.round(abs * factor) / factor;
+  // 避免美元价、汇率换算后的极小浮点误差把 0.08 展示成 0.09。
+  if (Math.abs(abs - rounded) <= 1e-6) {
+    return sign * rounded;
+  }
+  return (sign * Math.ceil(abs * factor)) / factor;
 };
 
 export const formatCeilPriceAmount = (value, digits = 2) =>
